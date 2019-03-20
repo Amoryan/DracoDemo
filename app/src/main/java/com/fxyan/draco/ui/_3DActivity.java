@@ -133,7 +133,14 @@ public final class _3DActivity
     }
 
     private void downloadDraco(List<String> tasks) {
-        for (String task : tasks) {
+        for (int i = 0; i < tasks.size(); i++) {
+            final int type;
+            if (i < 2) {
+                type = 0;
+            } else {
+                type = 1;
+            }
+            String task = tasks.get(i);
             Single.create((SingleOnSubscribe<String>) emitter -> {
                 Call<ResponseBody> download = ApiCreator.api().download(task);
                 InputStream is = null;
@@ -187,7 +194,7 @@ public final class _3DActivity
 
                         @Override
                         public void onSuccess(String ply) {
-                            renderer.readPlyFile(ply);
+                            renderer.readPlyFile(ply, type);
                         }
 
                         @Override

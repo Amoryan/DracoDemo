@@ -51,6 +51,8 @@ public final class Renderer
     private int programHandle;
 
     private Context context;
+    private Bitmap t950;
+    private Bitmap zuanshi;
 
     public Renderer(Context context) {
         this.context = context;
@@ -71,11 +73,9 @@ public final class Renderer
         GLES20.glTexParameteri(GLES20.GL_TEXTURE_2D, GLES20.GL_TEXTURE_WRAP_T, GLES20.GL_MIRRORED_REPEAT);
         GLES20.glTexParameteri(GLES20.GL_TEXTURE_2D, GLES20.GL_TEXTURE_MIN_FILTER, GLES20.GL_NEAREST);
         GLES20.glTexParameteri(GLES20.GL_TEXTURE_2D, GLES20.GL_TEXTURE_MAG_FILTER, GLES20.GL_LINEAR);
-        Bitmap bitmap = BitmapFactory.decodeResource(context.getResources(), R.mipmap.t950);
-//        Bitmap bitmap = BitmapFactory.decodeResource(getResources(), R.mipmap.kh);
-//        Bitmap bitmap = BitmapFactory.decodeResource(getResources(), R.mipmap.kb);
-//        Bitmap bitmap = BitmapFactory.decodeResource(getResources(), R.mipmap.kr);
-        GLUtils.texImage2D(GLES20.GL_TEXTURE_2D, 0, bitmap, 0);
+
+        t950 = BitmapFactory.decodeResource(context.getResources(), R.mipmap.t950);
+        zuanshi = BitmapFactory.decodeResource(context.getResources(), R.mipmap.zuanshi);
 
         for (PlyModel model : models) {
             model.onSurfaceCreated(gl, config);
@@ -108,13 +108,21 @@ public final class Renderer
         Matrix.rotateM(modelMatrix, 0, angleInDegrees, 1f, 1f, 1f);
         Matrix.multiplyMM(mvMatrix, 0, viewMatrix, 0, modelMatrix, 0);
         Matrix.multiplyMM(mvpMatrix, 0, projectionMatrix, 0, mvMatrix, 0);
+//        Bitmap bitmap = BitmapFactory.decodeResource(getResources(), R.mipmap.kh);
+//        Bitmap bitmap = BitmapFactory.decodeResource(getResources(), R.mipmap.kb);
+//        Bitmap bitmap = BitmapFactory.decodeResource(getResources(), R.mipmap.kr);
 
         for (PlyModel model : models) {
+            if (model.type == 0) {
+                GLUtils.texImage2D(GLES20.GL_TEXTURE_2D, 0, t950, 0);
+            } else {
+                GLUtils.texImage2D(GLES20.GL_TEXTURE_2D, 0, zuanshi, 0);
+            }
             model.onDrawFrame(mvpMatrix, programHandle);
         }
     }
 
-    public void readPlyFile(String path) {
+    public void readPlyFile(String path, int type) {
         Single.create((SingleOnSubscribe<PlyModel>) emitter -> {
             PlyReaderFile reader = null;
             try {
@@ -124,7 +132,7 @@ public final class Renderer
 
                 int[] index = readFace(reader);
 
-                emitter.onSuccess(new PlyModel(vertex, index));
+                emitter.onSuccess(new PlyModel(vertex, index, type));
             } catch (IOException e) {
                 emitter.onError(e);
             } finally {
