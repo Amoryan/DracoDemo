@@ -60,7 +60,7 @@ public final class Renderer
 
     @Override
     public void onSurfaceCreated(GL10 gl, EGLConfig config) {
-        GLES20.glClearColor(0f, 0f, 0f, 1f);
+        GLES20.glClearColor(0.8f, 0.8f, 0.8f, 1f);
         GLES20.glEnable(GLES20.GL_DEPTH_TEST);
 
         programHandle = GLESUtils.createAndLinkProgram("ply.vert", "ply.frag");
