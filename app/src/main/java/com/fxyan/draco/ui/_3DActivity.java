@@ -48,6 +48,10 @@ import retrofit2.Response;
 public final class _3DActivity
         extends AppCompatActivity {
 
+    static {
+        System.loadLibrary("native-lib");
+    }
+
     private static final String KEY = "key";
 
     public static void open(Context context, String name) {
@@ -86,6 +90,8 @@ public final class _3DActivity
         adapter = new Adapter();
         recyclerView.setAdapter(adapter);
     }
+
+    public native boolean decodeDraco(String draco, String ply);
 
     private void fetchData(String name) {
         Single.create((SingleOnSubscribe<_3DDetail>) emitter -> {
@@ -126,9 +132,9 @@ public final class _3DActivity
 
     private void downloadDraco(List<String> tasks) {
         for (String task : tasks) {
-            Single.create(new SingleOnSubscribe<Object>() {
+            Single.create(new SingleOnSubscribe<String>() {
                 @Override
-                public void subscribe(SingleEmitter<Object> emitter) throws Exception {
+                public void subscribe(SingleEmitter<String> emitter) throws Exception {
                     Call<ResponseBody> download = ApiCreator.api().download(task);
                     InputStream is = null;
                     FileOutputStream fos = null;
@@ -145,7 +151,16 @@ public final class _3DActivity
                                 fos.write(buf, 0, len);
                                 fos.flush();
                             }
+
                             Log.d("fxYan", "download success");
+                            Log.d("fxYan", "start decode");
+
+                            File ply = StorageUtils.plyFile(task);
+                            if (decodeDraco(draco.getAbsolutePath(), ply.getAbsolutePath())) {
+                                emitter.onSuccess(ply.getAbsolutePath());
+                            } else {
+                                emitter.onError(new RuntimeException("decode error"));
+                            }
                         }
                     } catch (IOException e) {
                         Log.d("fxYan", "download failed");
@@ -168,20 +183,20 @@ public final class _3DActivity
                 }
             }).observeOn(AndroidSchedulers.mainThread())
                     .subscribeOn(Schedulers.io())
-                    .subscribe(new SingleObserver<Object>() {
+                    .subscribe(new SingleObserver<String>() {
                         @Override
                         public void onSubscribe(Disposable d) {
 
                         }
 
                         @Override
-                        public void onSuccess(Object o) {
-
+                        public void onSuccess(String o) {
+                            Log.d("fxYan", "decode success");
                         }
 
                         @Override
                         public void onError(Throwable e) {
-                            Log.d("fxYan", "downlaod failed");
+                            Log.d("fxYan", "download or decode failed");
                         }
                     });
         }

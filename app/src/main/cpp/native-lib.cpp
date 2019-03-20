@@ -11,20 +11,19 @@
 #include <draco/io/obj_encoder.h>
 #include <draco/io/ply_encoder.h>
 
-extern "C" JNIEXPORT void JNICALL
-Java_com_threed_jpark_base_LauncherActivity_decodeDraco(JNIEnv *jniEnv, jobject,
-                                                        jstring fileName,
-                                                        jstring outputName,
-                                                        jboolean obj) {
-    bool isObj = obj == JNI_TRUE;
-    const char *cs = jniEnv->GetStringUTFChars(fileName, 0);
-    const char *cs1 = jniEnv->GetStringUTFChars(outputName, 0);
+extern "C" JNIEXPORT jboolean JNICALL
+Java_com_fxyan_draco_ui__13DActivity_decodeDraco(JNIEnv *jniEnv,
+                                                 jobject instance,
+                                                 jstring draco,
+                                                 jstring ply) {
+    const char *cs = jniEnv->GetStringUTFChars(draco, 0);
+    const char *cs1 = jniEnv->GetStringUTFChars(ply, 0);
 
     std::ifstream input_file(cs, std::ios::binary);
 
     // not found
     if (!input_file) {
-        return;
+        return false;
     }
 
     // Read the file stream into a buffer.
@@ -37,7 +36,7 @@ Java_com_threed_jpark_base_LauncherActivity_decodeDraco(JNIEnv *jniEnv, jobject,
 
     // file is empty
     if (data.empty()) {
-        return;
+        return false;
     }
 
     draco::DecoderBuffer buffer;
@@ -48,7 +47,7 @@ Java_com_threed_jpark_base_LauncherActivity_decodeDraco(JNIEnv *jniEnv, jobject,
     draco::Mesh *mesh = nullptr;
     auto type_statusor = draco::Decoder::GetEncodedGeometryType(&buffer);
     if (!type_statusor.ok()) {
-        return;
+        return false;
     }
 
     const draco::EncodedGeometryType geom_type = type_statusor.value();
@@ -57,7 +56,7 @@ Java_com_threed_jpark_base_LauncherActivity_decodeDraco(JNIEnv *jniEnv, jobject,
         draco::Decoder decoder;
         auto statusor = decoder.DecodeMeshFromBuffer(&buffer);
         if (!statusor.ok()) {
-            return;
+            return false;
         }
 
         std::unique_ptr<draco::Mesh> in_mesh = std::move(statusor).value();
@@ -71,7 +70,7 @@ Java_com_threed_jpark_base_LauncherActivity_decodeDraco(JNIEnv *jniEnv, jobject,
         draco::Decoder decoder;
         auto statusor = decoder.DecodePointCloudFromBuffer(&buffer);
         if (!statusor.ok()) {
-            return;
+            return false;
         }
         pc = std::move(statusor).value();
 
@@ -79,35 +78,23 @@ Java_com_threed_jpark_base_LauncherActivity_decodeDraco(JNIEnv *jniEnv, jobject,
 
     if (pc == nullptr) {
         std::cout << "decode failed !" << std::endl;
+        return false;
     } else {
         std::cout << "decode success !" << std::endl;
     }
 
-    if (isObj) {
-        draco::ObjEncoder obj_encoder;
-        if (mesh) {
-            if (!obj_encoder.EncodeToFile(*mesh, cs1)) {
-                printf("Failed to store the decoded mesh as OBJ.\n");
-                return;
-            }
-        } else {
-            if (!obj_encoder.EncodeToFile(*pc.get(), cs1)) {
-                printf("Failed to store the decoded point cloud as OBJ.\n");
-                return;
-            }
+    draco::PlyEncoder ply_encoder;
+    if (mesh) {
+        if (!ply_encoder.EncodeToFile(*mesh, cs1)) {
+            printf("Failed to store the decoded mesh as PLY.\n");
+            return false;
         }
     } else {
-        draco::PlyEncoder ply_encoder;
-        if (mesh) {
-            if (!ply_encoder.EncodeToFile(*mesh, cs1)) {
-                printf("Failed to store the decoded mesh as PLY.\n");
-                return;
-            }
-        } else {
-            if (!ply_encoder.EncodeToFile(*pc.get(), cs1)) {
-                printf("Failed to store the decoded point cloud as PLY.\n");
-                return;
-            }
+        if (!ply_encoder.EncodeToFile(*pc.get(), cs1)) {
+            printf("Failed to store the decoded point cloud as PLY.\n");
+            return false;
         }
     }
+
+    return true;
 }
