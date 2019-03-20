@@ -1,4 +1,4 @@
-package com.fxyan.draco.pojo;
+package com.fxyan.draco.entity;
 
 import java.util.List;
 

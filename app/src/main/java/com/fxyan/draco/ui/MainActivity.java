@@ -18,7 +18,7 @@ import android.widget.TextView;
 
 import com.bumptech.glide.Glide;
 import com.fxyan.draco.R;
-import com.fxyan.draco.pojo.Item;
+import com.fxyan.draco.entity.Item;
 import com.fxyan.draco.utils.AssetsUtils;
 import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
@@ -64,7 +64,7 @@ public class MainActivity
 
     private void fetchData() {
         Single.create((SingleOnSubscribe<List<Item>>) emitter -> {
-            String json = AssetsUtils.read(context, "main.json");
+            String json = AssetsUtils.read("main.json");
             List<Item> data = new Gson().fromJson(json, new TypeToken<List<Item>>() {
             }.getType());
             emitter.onSuccess(data);

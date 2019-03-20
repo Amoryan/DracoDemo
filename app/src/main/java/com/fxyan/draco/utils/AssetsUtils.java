@@ -1,6 +1,6 @@
 package com.fxyan.draco.utils;
 
-import android.content.Context;
+import com.fxyan.draco.BaseApp;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -11,11 +11,11 @@ import java.io.InputStreamReader;
  */
 public final class AssetsUtils {
 
-    public static String read(Context context, String path) {
+    public static String read(String path) {
         StringBuilder builder = new StringBuilder();
         BufferedReader bufr = null;
         try {
-            bufr = new BufferedReader(new InputStreamReader(context.getAssets().open(path)));
+            bufr = new BufferedReader(new InputStreamReader(BaseApp.getContext().getAssets().open(path)));
             String line;
             while ((line = bufr.readLine()) != null) {
                 builder.append(line);

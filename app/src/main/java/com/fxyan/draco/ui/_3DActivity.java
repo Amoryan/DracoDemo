@@ -16,10 +16,10 @@ import android.view.ViewGroup;
 import android.widget.TextView;
 
 import com.fxyan.draco.R;
+import com.fxyan.draco.entity.Item;
+import com.fxyan.draco.entity._3DDetail;
+import com.fxyan.draco.entity._3DItem;
 import com.fxyan.draco.net.ApiCreator;
-import com.fxyan.draco.pojo.Item;
-import com.fxyan.draco.pojo._3DDetail;
-import com.fxyan.draco.pojo._3DItem;
 import com.fxyan.draco.utils.AssetsUtils;
 import com.fxyan.draco.utils.StorageUtils;
 import com.google.gson.Gson;
@@ -32,7 +32,6 @@ import java.util.ArrayList;
 import java.util.List;
 
 import io.reactivex.Single;
-import io.reactivex.SingleEmitter;
 import io.reactivex.SingleObserver;
 import io.reactivex.SingleOnSubscribe;
 import io.reactivex.android.schedulers.AndroidSchedulers;
@@ -67,6 +66,8 @@ public final class _3DActivity
     private List<_3DItem> data = new ArrayList<>();
     private Adapter adapter;
 
+    private Renderer renderer;
+
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -83,7 +84,8 @@ public final class _3DActivity
 
         GLSurfaceView surfaceView = findViewById(R.id.surfaceView);
         surfaceView.setEGLContextClientVersion(2);// use opengl es 2.0
-        surfaceView.setRenderer(new Renderer());
+        renderer = new Renderer(this);
+        surfaceView.setRenderer(renderer);
 
         RecyclerView recyclerView = findViewById(R.id.recyclerView);
         recyclerView.setLayoutManager(new LinearLayoutManager(this));
@@ -95,7 +97,7 @@ public final class _3DActivity
 
     private void fetchData(String name) {
         Single.create((SingleOnSubscribe<_3DDetail>) emitter -> {
-            String json = AssetsUtils.read(context, name);
+            String json = AssetsUtils.read(name);
             _3DDetail data = new Gson().fromJson(json, _3DDetail.class);
             emitter.onSuccess(data);
         }).observeOn(AndroidSchedulers.mainThread())
@@ -132,52 +134,46 @@ public final class _3DActivity
 
     private void downloadDraco(List<String> tasks) {
         for (String task : tasks) {
-            Single.create(new SingleOnSubscribe<String>() {
-                @Override
-                public void subscribe(SingleEmitter<String> emitter) throws Exception {
-                    Call<ResponseBody> download = ApiCreator.api().download(task);
-                    InputStream is = null;
-                    FileOutputStream fos = null;
-                    try {
-                        Response<ResponseBody> execute = download.execute();
-                        ResponseBody body = execute.body();
-                        if (execute.isSuccessful() && body != null) {
-                            is = body.byteStream();
-                            File draco = StorageUtils.dracoFile(task);
-                            fos = new FileOutputStream(draco);
-                            byte[] buf = new byte[1024 * 4 * 4];
-                            int len;
-                            while ((len = is.read(buf)) != -1) {
-                                fos.write(buf, 0, len);
-                                fos.flush();
-                            }
-
-                            Log.d("fxYan", "download success");
-                            Log.d("fxYan", "start decode");
-
-                            File ply = StorageUtils.plyFile(task);
-                            if (decodeDraco(draco.getAbsolutePath(), ply.getAbsolutePath())) {
-                                emitter.onSuccess(ply.getAbsolutePath());
-                            } else {
-                                emitter.onError(new RuntimeException("decode error"));
-                            }
+            Single.create((SingleOnSubscribe<String>) emitter -> {
+                Call<ResponseBody> download = ApiCreator.api().download(task);
+                InputStream is = null;
+                FileOutputStream fos = null;
+                try {
+                    Response<ResponseBody> execute = download.execute();
+                    ResponseBody body = execute.body();
+                    if (execute.isSuccessful() && body != null) {
+                        is = body.byteStream();
+                        File draco = StorageUtils.dracoFile(task);
+                        fos = new FileOutputStream(draco);
+                        byte[] buf = new byte[1024 * 4 * 4];
+                        int len;
+                        while ((len = is.read(buf)) != -1) {
+                            fos.write(buf, 0, len);
+                            fos.flush();
                         }
-                    } catch (IOException e) {
-                        Log.d("fxYan", "download failed");
-                    } finally {
-                        if (is != null) {
-                            try {
-                                is.close();
-                            } catch (IOException e) {
-                                e.printStackTrace();
-                            }
+
+                        File ply = StorageUtils.plyFile(task);
+                        if (decodeDraco(draco.getAbsolutePath(), ply.getAbsolutePath())) {
+                            emitter.onSuccess(ply.getAbsolutePath());
+                        } else {
+                            emitter.onError(new RuntimeException("decode error"));
                         }
-                        if (fos != null) {
-                            try {
-                                fos.close();
-                            } catch (IOException e) {
-                                e.printStackTrace();
-                            }
+                    }
+                } catch (IOException e) {
+                    e.printStackTrace();
+                } finally {
+                    if (is != null) {
+                        try {
+                            is.close();
+                        } catch (IOException e) {
+                            e.printStackTrace();
+                        }
+                    }
+                    if (fos != null) {
+                        try {
+                            fos.close();
+                        } catch (IOException e) {
+                            e.printStackTrace();
                         }
                     }
                 }
@@ -190,13 +186,12 @@ public final class _3DActivity
                         }
 
                         @Override
-                        public void onSuccess(String o) {
-                            Log.d("fxYan", "decode success");
+                        public void onSuccess(String ply) {
+                            renderer.readPlyFile(ply);
                         }
 
                         @Override
                         public void onError(Throwable e) {
-                            Log.d("fxYan", "download or decode failed");
                         }
                     });
         }
