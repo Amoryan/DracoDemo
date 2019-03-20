@@ -1,0 +1,86 @@
+{
+  "huatuo": {
+    "name": "花托",
+    "style": [
+      {
+        "name": "J000003花托",
+        "key": "44521c14-6f9a-438c-b24c-23dacc3584fe"
+      }
+    ],
+    "material": [
+      {
+        "name": "PT950",
+        "key": "e8f99bb0-f8dc-4bb3-be83-ddbd83e7c6aa"
+      },
+      {
+        "name": "18K金-白",
+        "key": "e78284b6-1ab4-4646-88c3-d3007955a01e"
+      },
+      {
+        "name": "18K金-红",
+        "key": "e8f99bb0-f8dc-4bb3-be83-ddbd83e7c6aa"
+      },
+      {
+        "name": "18K金-金",
+        "key": "e8f99bb0-f8dc-4bb3-be83-ddbd83e7c6aa"
+      }
+    ]
+  },
+  "jiebi": {
+    "name": "戒臂",
+    "style": [
+      {
+        "name": "J000003戒臂",
+        "key": "b1cebb31-cd20-4949-88d2-7507b343a9a3"
+      }
+    ],
+    "material": [
+      {
+        "name": "PT950",
+        "key": "e8f99bb0-f8dc-4bb3-be83-ddbd83e7c6aa"
+      },
+      {
+        "name": "18K金-白",
+        "key": "e78284b6-1ab4-4646-88c3-d3007955a01e"
+      },
+      {
+        "name": "18K金-红",
+        "key": "e8f99bb0-f8dc-4bb3-be83-ddbd83e7c6aa"
+      },
+      {
+        "name": "18K金-金",
+        "key": "e8f99bb0-f8dc-4bb3-be83-ddbd83e7c6aa"
+      }
+    ]
+  },
+  "zhushi": {
+    "name": "主石",
+    "style": [
+      {
+        "name": "J000003主石",
+        "key": "d69518f3-6086-42c6-883b-0ea1cee34187"
+      }
+    ],
+    "material": [
+      {
+        "name": "钻石",
+        "key": "771206ea-0990-4714-86bc-858cd2b1e9f5"
+      }
+    ]
+  },
+  "fushi": {
+    "name": "副石",
+    "style": [
+      {
+        "name": "J000003花托副石",
+        "key": "4d1228fc-9f43-4e5d-be79-f90adeb1a222"
+      }
+    ],
+    "material": [
+      {
+        "name": "钻石",
+        "key": "771206ea-0990-4714-86bc-858cd2b1e9f5"
+      }
+    ]
+  }
+}

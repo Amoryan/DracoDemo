@@ -1,4 +1,4 @@
-package com.fxyan.draco;
+package com.fxyan.draco.ui;
 
 import android.content.Context;
 import android.os.Bundle;
@@ -14,7 +14,8 @@ import android.widget.ImageView;
 import android.widget.TextView;
 
 import com.bumptech.glide.Glide;
-import com.fxyan.draco.pojo.MainItem;
+import com.fxyan.draco.R;
+import com.fxyan.draco.pojo.Item;
 import com.fxyan.draco.utils.AssetsUtils;
 import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
@@ -35,7 +36,7 @@ public class MainActivity
     private Context context;
 
     private Adapter adapter;
-    private List<MainItem> data = new ArrayList<>();
+    private List<Item> data = new ArrayList<>();
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -53,21 +54,21 @@ public class MainActivity
     }
 
     private void fetchData() {
-        Single.create((SingleOnSubscribe<List<MainItem>>) emitter -> {
+        Single.create((SingleOnSubscribe<List<Item>>) emitter -> {
             String json = AssetsUtils.read(context, "main.json");
-            List<MainItem> data = new Gson().fromJson(json, new TypeToken<List<MainItem>>() {
+            List<Item> data = new Gson().fromJson(json, new TypeToken<List<Item>>() {
             }.getType());
             emitter.onSuccess(data);
         }).observeOn(AndroidSchedulers.mainThread())
                 .subscribeOn(Schedulers.io())
-                .subscribe(new SingleObserver<List<MainItem>>() {
+                .subscribe(new SingleObserver<List<Item>>() {
                     @Override
                     public void onSubscribe(Disposable d) {
                     }
 
                     @Override
-                    public void onSuccess(List<MainItem> mainItems) {
-                        data.addAll(mainItems);
+                    public void onSuccess(List<Item> items) {
+                        data.addAll(items);
                         adapter.notifyDataSetChanged();
                     }
 
@@ -94,10 +95,16 @@ public class MainActivity
             ImageView image = root.findViewById(R.id.image);
             TextView name = root.findViewById(R.id.name);
 
-            MainItem item = data.get(i);
+            Item item = data.get(i);
 
-            Glide.with(context).asBitmap().load(item.image).into(image);
+            Glide.with(context).asBitmap().load(String.format("https://api.app.jpark.vip/api/file/get/%s", item.key)).into(image);
             name.setText(item.name);
+
+            root.setTag(item.key);
+            root.setOnClickListener(v -> {
+                String key = (String) v.getTag();
+                _3DActivity.open(context, key);
+            });
         }
 
         @Override
