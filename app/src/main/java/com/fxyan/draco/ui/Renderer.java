@@ -1,6 +1,5 @@
 package com.fxyan.draco.ui;
 
-import android.content.Context;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.opengl.GLES20;
@@ -12,14 +11,20 @@ import android.util.Log;
 
 import com.fxyan.draco.R;
 import com.fxyan.draco.entity.PlyModel;
+import com.fxyan.draco.net.ApiCreator;
 import com.fxyan.draco.utils.GLESUtils;
+import com.fxyan.draco.utils.StorageUtils;
 
 import org.smurn.jply.Element;
 import org.smurn.jply.ElementReader;
 import org.smurn.jply.PlyReaderFile;
 
+import java.io.File;
+import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CopyOnWriteArrayList;
 
@@ -32,6 +37,9 @@ import io.reactivex.SingleOnSubscribe;
 import io.reactivex.android.schedulers.AndroidSchedulers;
 import io.reactivex.disposables.Disposable;
 import io.reactivex.schedulers.Schedulers;
+import okhttp3.ResponseBody;
+import retrofit2.Call;
+import retrofit2.Response;
 
 /**
  * @author fxYan
@@ -50,12 +58,23 @@ public final class Renderer
 
     private int programHandle;
 
-    private Context context;
+    private ThreeDActivity context;
     private Bitmap t950;
     private Bitmap zuanshi;
 
-    public Renderer(Context context) {
+    public Renderer(ThreeDActivity context) {
         this.context = context;
+    }
+
+    public void removeModel(String key) {
+        PlyModel plyModel = map.remove(key);
+        if (plyModel != null) {
+            models.remove(plyModel);
+        }
+    }
+
+    public void addModel(String key) {
+
     }
 
     @Override
@@ -108,9 +127,6 @@ public final class Renderer
         Matrix.rotateM(modelMatrix, 0, angleInDegrees, 1f, 1f, 1f);
         Matrix.multiplyMM(mvMatrix, 0, viewMatrix, 0, modelMatrix, 0);
         Matrix.multiplyMM(mvpMatrix, 0, projectionMatrix, 0, mvMatrix, 0);
-//        Bitmap bitmap = BitmapFactory.decodeResource(getResources(), R.mipmap.kh);
-//        Bitmap bitmap = BitmapFactory.decodeResource(getResources(), R.mipmap.kb);
-//        Bitmap bitmap = BitmapFactory.decodeResource(getResources(), R.mipmap.kr);
 
         for (PlyModel model : models) {
             if (model.type == 0) {
@@ -122,31 +138,139 @@ public final class Renderer
         }
     }
 
+    public void render(List<String> tasks) {
+        for (int i = 0; i < tasks.size(); i++) {
+            final int type;
+            if (i < 2) {
+                type = 0;
+            } else {
+                type = 1;
+            }
+            String task = tasks.get(i);
+
+            File file = StorageUtils.plyFile(task);
+            if (file.exists()) {
+                Log.d("fxYan", String.format("文件%s.ply已存在，直接加载", task));
+                readPlyFile(file.getAbsolutePath(), type);
+                continue;
+            }
+
+            Single.create((SingleOnSubscribe<String>) emitter -> {
+                boolean result = false;
+                File ply = StorageUtils.plyFile(task);
+
+                Call<ResponseBody> download = ApiCreator.api().download(task);
+                InputStream is = null;
+                FileOutputStream fos = null;
+                try {
+                    Response<ResponseBody> execute = download.execute();
+                    ResponseBody body = execute.body();
+                    if (execute.isSuccessful() && body != null) {
+                        long start = System.currentTimeMillis();
+                        Log.d("fxYan", String.format("文件%s开始下载", task));
+
+                        is = body.byteStream();
+                        File draco = StorageUtils.dracoFile(task);
+                        fos = new FileOutputStream(draco);
+                        byte[] buf = new byte[1024 * 4 * 4];
+                        int len;
+                        while ((len = is.read(buf)) != -1) {
+                            fos.write(buf, 0, len);
+                            fos.flush();
+                        }
+
+                        long end = System.currentTimeMillis();
+                        Log.d("fxYan", String.format("文件%s下载完成，耗时%s", task, (end - start)));
+
+                        start = System.currentTimeMillis();
+                        Log.d("fxYan", String.format("文件%s开始解压", task));
+
+                        if (context.decodeDraco(draco.getAbsolutePath(), ply.getAbsolutePath())) {
+                            end = System.currentTimeMillis();
+                            Log.d("fxYan", String.format("文件%s解压完成，耗时%s", task, (end - start)));
+
+                            result = true;
+                        }
+                    }
+                } catch (Exception e) {
+                    e.printStackTrace();
+                } finally {
+                    if (is != null) {
+                        try {
+                            is.close();
+                        } catch (IOException e) {
+                            e.printStackTrace();
+                        }
+                    }
+                    if (fos != null) {
+                        try {
+                            fos.close();
+                        } catch (IOException e) {
+                            e.printStackTrace();
+                        }
+                    }
+                }
+
+                if (result) {
+                    emitter.onSuccess(ply.getAbsolutePath());
+                } else {
+                    emitter.onError(new RuntimeException());
+                }
+            }).observeOn(AndroidSchedulers.mainThread())
+                    .subscribeOn(Schedulers.io())
+                    .subscribe(new SingleObserver<String>() {
+                        @Override
+                        public void onSubscribe(Disposable d) {
+
+                        }
+
+                        @Override
+                        public void onSuccess(String ply) {
+                            readPlyFile(ply, type);
+                        }
+
+                        @Override
+                        public void onError(Throwable e) {
+                        }
+                    });
+        }
+    }
+
     public void readPlyFile(String path, int type) {
         Single.create((SingleOnSubscribe<PlyModel>) emitter -> {
-            Log.d("fxYan", String.format("文件%s开始解析", path));
-            long start = System.currentTimeMillis();
+            boolean result = false;
+
             PlyReaderFile reader = null;
+            float[] vertex = null;
+            int[] index = null;
+
             try {
+                long start = System.currentTimeMillis();
+                Log.d("fxYan", String.format("文件%s开始解析", path));
+
                 reader = new PlyReaderFile(path);
+                vertex = readVertex(reader);
+                index = readFace(reader);
+                result = true;
 
-                float[] vertex = readVertex(reader);
-
-                int[] index = readFace(reader);
-
-                emitter.onSuccess(new PlyModel(vertex, index, type));
                 long end = System.currentTimeMillis();
                 Log.d("fxYan", String.format("%s文件解析完成，耗时%s", path, (end - start)));
             } catch (IOException e) {
-                emitter.onError(e);
+                e.printStackTrace();
             } finally {
                 if (reader != null) {
                     try {
                         reader.close();
                     } catch (IOException e) {
-                        emitter.onError(e);
+                        e.printStackTrace();
                     }
                 }
+            }
+
+            if (result) {
+                emitter.onSuccess(new PlyModel(vertex, index, type));
+            } else {
+                emitter.onError(new RuntimeException());
             }
         }).observeOn(AndroidSchedulers.mainThread())
                 .subscribeOn(Schedulers.io())

@@ -24,7 +24,7 @@
             </intent-filter>
         </activity>
         <activity
-            android:name=".ui._3DActivity"
+            android:name=".ui.ThreeDActivity"
             android:screenOrientation="portrait" />
     </application>
 

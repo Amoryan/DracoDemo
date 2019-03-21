@@ -19,15 +19,9 @@ import com.fxyan.draco.R;
 import com.fxyan.draco.entity.Item;
 import com.fxyan.draco.entity._3DDetail;
 import com.fxyan.draco.entity._3DItem;
-import com.fxyan.draco.net.ApiCreator;
 import com.fxyan.draco.utils.AssetsUtils;
-import com.fxyan.draco.utils.StorageUtils;
 import com.google.gson.Gson;
 
-import java.io.File;
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -37,14 +31,11 @@ import io.reactivex.SingleOnSubscribe;
 import io.reactivex.android.schedulers.AndroidSchedulers;
 import io.reactivex.disposables.Disposable;
 import io.reactivex.schedulers.Schedulers;
-import okhttp3.ResponseBody;
-import retrofit2.Call;
-import retrofit2.Response;
 
 /**
  * @author fxYan
  */
-public final class _3DActivity
+public final class ThreeDActivity
         extends AppCompatActivity {
 
     static {
@@ -54,7 +45,7 @@ public final class _3DActivity
     private static final String KEY = "key";
 
     public static void open(Context context, String name) {
-        Intent intent = new Intent(context, _3DActivity.class);
+        Intent intent = new Intent(context, ThreeDActivity.class);
         Bundle bundle = new Bundle();
         bundle.putString(KEY, name);
         intent.putExtras(bundle);
@@ -116,13 +107,20 @@ public final class _3DActivity
                         data.add(item.fushi);
                         adapter.notifyDataSetChanged();
 
-                        List<String> tasks = new ArrayList<>();
-                        tasks.add(item.huatuo.style.get(0).key);
-                        tasks.add(item.jiebi.style.get(0).key);
-                        tasks.add(item.zhushi.style.get(0).key);
-                        tasks.add(item.fushi.style.get(0).key);
+                        List<String> dracoTasks = new ArrayList<>();
+                        dracoTasks.add(item.huatuo.style.get(0).key);
+                        dracoTasks.add(item.jiebi.style.get(0).key);
+                        dracoTasks.add(item.zhushi.style.get(0).key);
+                        dracoTasks.add(item.fushi.style.get(0).key);
 
-                        downloadDraco(tasks);
+                        renderer.render(dracoTasks);
+
+                        List<String> textureTasks = new ArrayList<>();
+                        textureTasks.add(item.huatuo.material.get(0).key);
+                        textureTasks.add(item.jiebi.material.get(0).key);
+                        textureTasks.add(item.zhushi.material.get(0).key);
+                        textureTasks.add(item.fushi.material.get(0).key);
+
                     }
 
                     @Override
@@ -130,94 +128,6 @@ public final class _3DActivity
                         Log.d("fxYan", "error");
                     }
                 });
-    }
-
-    private void downloadDraco(List<String> tasks) {
-        for (int i = 0; i < tasks.size(); i++) {
-            final int type;
-            if (i < 2) {
-                type = 0;
-            } else {
-                type = 1;
-            }
-            String task = tasks.get(i);
-            File file = StorageUtils.plyFile(task);
-            if (file.exists()) {
-                Log.d("fxYan", String.format("文件%s.ply已存在，直接加载", task));
-                renderer.readPlyFile(file.getAbsolutePath(), type);
-                continue;
-            }
-            Single.create((SingleOnSubscribe<String>) emitter -> {
-                Log.d("fxYan", String.format("文件%s开始下载", task));
-                long start = System.currentTimeMillis();
-                Call<ResponseBody> download = ApiCreator.api().download(task);
-                InputStream is = null;
-                FileOutputStream fos = null;
-                try {
-                    Response<ResponseBody> execute = download.execute();
-                    ResponseBody body = execute.body();
-                    if (execute.isSuccessful() && body != null) {
-                        is = body.byteStream();
-                        File draco = StorageUtils.dracoFile(task);
-                        fos = new FileOutputStream(draco);
-                        byte[] buf = new byte[1024 * 4 * 4];
-                        int len;
-                        while ((len = is.read(buf)) != -1) {
-                            fos.write(buf, 0, len);
-                            fos.flush();
-                        }
-
-                        long end = System.currentTimeMillis();
-                        Log.d("fxYan", String.format("文件%s下载完成，耗时%s", task, (end - start)));
-
-                        File ply = StorageUtils.plyFile(task);
-                        Log.d("fxYan", String.format("文件%s开始解压", task));
-                        start = System.currentTimeMillis();
-                        if (decodeDraco(draco.getAbsolutePath(), ply.getAbsolutePath())) {
-                            end = System.currentTimeMillis();
-                            Log.d("fxYan", String.format("文件%s解压完成，耗时%s", task, (end - start)));
-                            emitter.onSuccess(ply.getAbsolutePath());
-                        } else {
-                            emitter.onError(new RuntimeException("decode error"));
-                        }
-                    }
-                } catch (IOException e) {
-                    e.printStackTrace();
-                } finally {
-                    if (is != null) {
-                        try {
-                            is.close();
-                        } catch (IOException e) {
-                            e.printStackTrace();
-                        }
-                    }
-                    if (fos != null) {
-                        try {
-                            fos.close();
-                        } catch (IOException e) {
-                            e.printStackTrace();
-                        }
-                    }
-                }
-            }).observeOn(AndroidSchedulers.mainThread())
-                    .subscribeOn(Schedulers.io())
-                    .subscribe(new SingleObserver<String>() {
-                        @Override
-                        public void onSubscribe(Disposable d) {
-
-                        }
-
-                        @Override
-                        public void onSuccess(String ply) {
-                            renderer.readPlyFile(ply, type);
-                        }
-
-                        @Override
-                        public void onError(Throwable e) {
-                            Log.d("fxYan", String.format("文件%s解析失败", task));
-                        }
-                    });
-        }
     }
 
     class Adapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {

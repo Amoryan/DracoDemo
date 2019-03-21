@@ -12,7 +12,7 @@
 #include <draco/io/ply_encoder.h>
 
 extern "C" JNIEXPORT jboolean JNICALL
-Java_com_fxyan_draco_ui__13DActivity_decodeDraco(JNIEnv *jniEnv,
+Java_com_fxyan_draco_ui_ThreeDActivity_decodeDraco(JNIEnv *jniEnv,
                                                  jobject instance,
                                                  jstring draco,
                                                  jstring ply) {

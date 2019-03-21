@@ -112,7 +112,7 @@ public class MainActivity
             root.setTag(item.key);
             root.setOnClickListener(v -> {
                 String key = (String) v.getTag();
-                _3DActivity.open(context, key);
+                ThreeDActivity.open(context, key);
             });
         }
 
