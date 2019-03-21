@@ -146,11 +146,11 @@ public final class ThreeDActivity
 
             RecyclerView styleRv = root.findViewById(R.id.styleRv);
             styleRv.setLayoutManager(new LinearLayoutManager(context, RecyclerView.HORIZONTAL, false));
-            styleRv.setAdapter(new ChildAdapter(item.style));
+            styleRv.setAdapter(new StyleAdapter(item.style));
 
             RecyclerView materialRv = root.findViewById(R.id.materialRv);
             materialRv.setLayoutManager(new LinearLayoutManager(context, RecyclerView.HORIZONTAL, false));
-            materialRv.setAdapter(new ChildAdapter(item.material));
+            materialRv.setAdapter(new MaterialAdapter(item.style.get(0).key, item.material));
         }
 
         @Override
@@ -159,11 +159,11 @@ public final class ThreeDActivity
         }
     }
 
-    class ChildAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
+    class StyleAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
 
-        private List<Item> data;
+        List<Item> data;
 
-        public ChildAdapter(List<Item> data) {
+        public StyleAdapter(List<Item> data) {
             this.data = data;
         }
 
@@ -185,6 +185,30 @@ public final class ThreeDActivity
         @Override
         public int getItemCount() {
             return data.size();
+        }
+    }
+
+    class MaterialAdapter extends StyleAdapter {
+
+        private String style;
+
+        public MaterialAdapter(String style, List<Item> data) {
+            super(data);
+            this.style = style;
+        }
+
+        @Override
+        public void onBindViewHolder(@NonNull RecyclerView.ViewHolder viewHolder, int i) {
+            super.onBindViewHolder(viewHolder, i);
+
+            viewHolder.itemView.setTag(data.get(i).key);
+            viewHolder.itemView.setOnClickListener(new View.OnClickListener() {
+                @Override
+                public void onClick(View v) {
+                    String key = (String) v.getTag();
+                    renderer.updateMaterial(style, key);
+                }
+            });
         }
     }
 }
