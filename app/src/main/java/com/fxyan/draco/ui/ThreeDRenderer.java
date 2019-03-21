@@ -44,7 +44,7 @@ import retrofit2.Response;
 /**
  * @author fxYan
  */
-public final class Renderer
+public final class ThreeDRenderer
         implements GLSurfaceView.Renderer {
 
     private ThreeDActivity context;
@@ -60,9 +60,11 @@ public final class Renderer
     private float[] viewMatrix = new float[16];
     private float[] projectionMatrix = new float[16];
 
+    private float scale = 1;
+
     private int programHandle;
 
-    public Renderer(ThreeDActivity context) {
+    public ThreeDRenderer(ThreeDActivity context) {
         this.context = context;
         this.disposables = new CompositeDisposable();
         this.modelMap = new ConcurrentHashMap<>();
@@ -75,6 +77,14 @@ public final class Renderer
                 }
             }
         };
+    }
+
+    public float getScale() {
+        return scale;
+    }
+
+    public void setScale(float scale) {
+        this.scale = scale;
     }
 
     @Override
@@ -101,11 +111,11 @@ public final class Renderer
     public void onSurfaceChanged(GL10 gl, int width, int height) {
         GLES20.glViewport(0, 0, width, height);
 
-        Matrix.setLookAtM(viewMatrix, 0, 0, 0, 30f, 0f, 0f, -5f, 1f, 1f, 1f);
+        Matrix.setLookAtM(viewMatrix, 0, 0, 0, 30f, 0f, 0f, -5f, 0f, 1f, 0f);
 
         float ratio = (float) width / height;
 
-        Matrix.frustumM(projectionMatrix, 0, -ratio, ratio, -1, 1, 1f, 100f);
+        Matrix.frustumM(projectionMatrix, 0, -ratio, ratio, -1, 1, 1f, 50f);
         for (PlyModel model : modelMap.values()) {
             model.onSurfaceChanged(gl, width, height);
         }
@@ -118,6 +128,7 @@ public final class Renderer
         GLES20.glUseProgram(programHandle);
 
         Matrix.setIdentityM(modelMatrix, 0);
+        Matrix.scaleM(modelMatrix, 0, scale, scale, scale);
         long time = SystemClock.uptimeMillis() % 10000L;
         float angleInDegrees = (360.0f / 10000.0f) * ((int) time);
         Matrix.rotateM(modelMatrix, 0, angleInDegrees, 1f, 1f, 1f);

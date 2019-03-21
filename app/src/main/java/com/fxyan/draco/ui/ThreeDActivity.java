@@ -2,7 +2,6 @@ package com.fxyan.draco.ui;
 
 import android.content.Context;
 import android.content.Intent;
-import android.opengl.GLSurfaceView;
 import android.os.Bundle;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
@@ -16,6 +15,7 @@ import android.view.ViewGroup;
 import android.widget.TextView;
 
 import com.fxyan.draco.R;
+import com.fxyan.draco.ThreeDSurfaceView;
 import com.fxyan.draco.entity.Item;
 import com.fxyan.draco.entity._3DDetail;
 import com.fxyan.draco.entity._3DItem;
@@ -57,7 +57,7 @@ public final class ThreeDActivity
     private List<_3DItem> data = new ArrayList<>();
     private Adapter adapter;
 
-    private Renderer renderer;
+    private ThreeDRenderer renderer;
 
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {
@@ -73,10 +73,10 @@ public final class ThreeDActivity
             fetchData(String.format("%s.json", key));
         }
 
-        GLSurfaceView surfaceView = findViewById(R.id.surfaceView);
+        ThreeDSurfaceView surfaceView = findViewById(R.id.surfaceView);
         surfaceView.setEGLContextClientVersion(2);// use opengl es 2.0
-        renderer = new Renderer(this);
-        surfaceView.setRenderer(renderer);
+        renderer = new ThreeDRenderer(this);
+        surfaceView.setThreeDRenderer(renderer);
 
         RecyclerView recyclerView = findViewById(R.id.recyclerView);
         recyclerView.setLayoutManager(new LinearLayoutManager(this));
