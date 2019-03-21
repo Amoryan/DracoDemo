@@ -124,6 +124,8 @@ public final class Renderer
 
     public void readPlyFile(String path, int type) {
         Single.create((SingleOnSubscribe<PlyModel>) emitter -> {
+            Log.d("fxYan", String.format("文件%s开始解析", path));
+            long start = System.currentTimeMillis();
             PlyReaderFile reader = null;
             try {
                 reader = new PlyReaderFile(path);
@@ -133,6 +135,8 @@ public final class Renderer
                 int[] index = readFace(reader);
 
                 emitter.onSuccess(new PlyModel(vertex, index, type));
+                long end = System.currentTimeMillis();
+                Log.d("fxYan", String.format("%s文件解析完成，耗时%s", path, (end - start)));
             } catch (IOException e) {
                 emitter.onError(e);
             } finally {

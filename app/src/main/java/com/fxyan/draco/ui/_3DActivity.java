@@ -141,7 +141,15 @@ public final class _3DActivity
                 type = 1;
             }
             String task = tasks.get(i);
+            File file = StorageUtils.plyFile(task);
+            if (file.exists()) {
+                Log.d("fxYan", String.format("文件%s.ply已存在，直接加载", task));
+                renderer.readPlyFile(file.getAbsolutePath(), type);
+                continue;
+            }
             Single.create((SingleOnSubscribe<String>) emitter -> {
+                Log.d("fxYan", String.format("文件%s开始下载", task));
+                long start = System.currentTimeMillis();
                 Call<ResponseBody> download = ApiCreator.api().download(task);
                 InputStream is = null;
                 FileOutputStream fos = null;
@@ -159,8 +167,15 @@ public final class _3DActivity
                             fos.flush();
                         }
 
+                        long end = System.currentTimeMillis();
+                        Log.d("fxYan", String.format("文件%s下载完成，耗时%s", task, (end - start)));
+
                         File ply = StorageUtils.plyFile(task);
+                        Log.d("fxYan", String.format("文件%s开始解压", task));
+                        start = System.currentTimeMillis();
                         if (decodeDraco(draco.getAbsolutePath(), ply.getAbsolutePath())) {
+                            end = System.currentTimeMillis();
+                            Log.d("fxYan", String.format("文件%s解压完成，耗时%s", task, (end - start)));
                             emitter.onSuccess(ply.getAbsolutePath());
                         } else {
                             emitter.onError(new RuntimeException("decode error"));
@@ -199,6 +214,7 @@ public final class _3DActivity
 
                         @Override
                         public void onError(Throwable e) {
+                            Log.d("fxYan", String.format("文件%s解析失败", task));
                         }
                     });
         }
