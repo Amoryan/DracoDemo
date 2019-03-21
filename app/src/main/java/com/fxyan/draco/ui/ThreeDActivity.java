@@ -120,6 +120,12 @@ public final class ThreeDActivity
                 });
     }
 
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+        renderer.destroy();
+    }
+
     class Adapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
 
         @NonNull

@@ -1,10 +1,12 @@
 package com.fxyan.draco.ui;
 
+import android.graphics.Bitmap;
 import android.opengl.GLES20;
 import android.opengl.GLSurfaceView;
 import android.opengl.Matrix;
 import android.os.SystemClock;
 import android.util.Log;
+import android.util.LruCache;
 
 import com.fxyan.draco.entity.PlyModel;
 import com.fxyan.draco.net.ApiCreator;
@@ -28,6 +30,7 @@ import io.reactivex.Single;
 import io.reactivex.SingleObserver;
 import io.reactivex.SingleOnSubscribe;
 import io.reactivex.android.schedulers.AndroidSchedulers;
+import io.reactivex.disposables.CompositeDisposable;
 import io.reactivex.disposables.Disposable;
 import io.reactivex.schedulers.Schedulers;
 import okhttp3.ResponseBody;
@@ -42,7 +45,16 @@ public final class Renderer
 
     private ThreeDActivity context;
 
-    private ConcurrentHashMap<String, PlyModel> map = new ConcurrentHashMap<>();
+    private CompositeDisposable disposables;
+    private ConcurrentHashMap<String, PlyModel> map;
+    private LruCache<String, Bitmap> lruCache = new LruCache<String, Bitmap>(1024) {
+        @Override
+        protected void entryRemoved(boolean evicted, String key, Bitmap oldValue, Bitmap newValue) {
+            if (oldValue != newValue) {
+                oldValue.recycle();
+            }
+        }
+    };
 
     private float[] mvpMatrix = new float[16];
     private float[] mvMatrix = new float[16];
@@ -54,14 +66,8 @@ public final class Renderer
 
     public Renderer(ThreeDActivity context) {
         this.context = context;
-    }
-
-    public void removeModel(String key) {
-        map.remove(key);
-    }
-
-    public void addModel(String key) {
-        render(key);
+        this.disposables = new CompositeDisposable();
+        this.map = new ConcurrentHashMap<>();
     }
 
     @Override
@@ -114,6 +120,14 @@ public final class Renderer
         for (PlyModel model : map.values()) {
             model.onDrawFrame(mvpMatrix, programHandle);
         }
+    }
+
+    public void removeModel(String key) {
+        map.remove(key);
+    }
+
+    public void addModel(String key) {
+        render(key);
     }
 
     private void render(String key) {
@@ -199,7 +213,7 @@ public final class Renderer
                 .subscribe(new SingleObserver<String>() {
                     @Override
                     public void onSubscribe(Disposable d) {
-
+                        disposables.add(d);
                     }
 
                     @Override
@@ -254,6 +268,7 @@ public final class Renderer
                 .subscribe(new SingleObserver<PlyModel>() {
                     @Override
                     public void onSubscribe(Disposable d) {
+                        disposables.add(d);
                     }
 
                     @Override
@@ -265,7 +280,6 @@ public final class Renderer
                     public void onError(Throwable e) {
                         Log.d("fxYan", String.format("路径为 %s 的文件解析失败", path));
 
-                        // read exist ply file failed ,retry download -> decode -> read
                         if (isExistRead) {
                             downloadAndDecodeDracoFile(key);
                         }
@@ -305,6 +319,11 @@ public final class Renderer
         }
         elementReader.close();
         return index;
+    }
+
+    public void destroy() {
+        disposables.clear();
+        context = null;
     }
 
 }
