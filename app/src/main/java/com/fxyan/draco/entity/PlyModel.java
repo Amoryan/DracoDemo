@@ -27,12 +27,10 @@ public class PlyModel {
     protected float[] vertex;
     protected IntBuffer indexBuffer;
     protected int[] index;
-    public int type;
 
-    public PlyModel(float[] _vertex, int[] _index, int type) {
+    public PlyModel(float[] _vertex, int[] _index) {
         this.vertex = _vertex;
         this.index = _index;
-        this.type = type;
 
         vertexBuffer = ByteBuffer.allocateDirect(vertex.length * PER_FLOAT_BYTES)
                 .order(ByteOrder.nativeOrder())

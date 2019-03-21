@@ -107,20 +107,10 @@ public final class ThreeDActivity
                         data.add(item.fushi);
                         adapter.notifyDataSetChanged();
 
-                        List<String> dracoTasks = new ArrayList<>();
-                        dracoTasks.add(item.huatuo.style.get(0).key);
-                        dracoTasks.add(item.jiebi.style.get(0).key);
-                        dracoTasks.add(item.zhushi.style.get(0).key);
-                        dracoTasks.add(item.fushi.style.get(0).key);
-
-                        renderer.render(dracoTasks);
-
-                        List<String> textureTasks = new ArrayList<>();
-                        textureTasks.add(item.huatuo.material.get(0).key);
-                        textureTasks.add(item.jiebi.material.get(0).key);
-                        textureTasks.add(item.zhushi.material.get(0).key);
-                        textureTasks.add(item.fushi.material.get(0).key);
-
+                        renderer.addModel(item.huatuo.style.get(0).key);
+                        renderer.addModel(item.jiebi.style.get(0).key);
+                        renderer.addModel(item.zhushi.style.get(0).key);
+                        renderer.addModel(item.fushi.style.get(0).key);
                     }
 
                     @Override
