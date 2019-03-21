@@ -160,10 +160,7 @@ public final class ThreeDRenderer
 
     public void updateMaterial(String style, String material) {
         materialMap.put(style, material);
-        Bitmap bitmap = bitmapCache.get(material);
-        if (bitmap == null) {
-            downloadImage(material);
-        }
+        renderMaterial(material);
     }
 
     private void renderStyle(String key) {
