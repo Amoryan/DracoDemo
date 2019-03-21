@@ -1,8 +1,10 @@
 package com.fxyan.draco.ui;
 
 import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
 import android.opengl.GLES20;
 import android.opengl.GLSurfaceView;
+import android.opengl.GLUtils;
 import android.opengl.Matrix;
 import android.os.SystemClock;
 import android.util.Log;
@@ -21,12 +23,14 @@ import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
 import javax.microedition.khronos.egl.EGLConfig;
 import javax.microedition.khronos.opengles.GL10;
 
 import io.reactivex.Single;
+import io.reactivex.SingleEmitter;
 import io.reactivex.SingleObserver;
 import io.reactivex.SingleOnSubscribe;
 import io.reactivex.android.schedulers.AndroidSchedulers;
@@ -46,15 +50,9 @@ public final class Renderer
     private ThreeDActivity context;
 
     private CompositeDisposable disposables;
-    private ConcurrentHashMap<String, PlyModel> map;
-    private LruCache<String, Bitmap> lruCache = new LruCache<String, Bitmap>(1024) {
-        @Override
-        protected void entryRemoved(boolean evicted, String key, Bitmap oldValue, Bitmap newValue) {
-            if (oldValue != newValue) {
-                oldValue.recycle();
-            }
-        }
-    };
+    private ConcurrentHashMap<String, PlyModel> modelMap;
+    private ConcurrentHashMap<String, String> materialMap;
+    private LruCache<String, Bitmap> bitmapCache;
 
     private float[] mvpMatrix = new float[16];
     private float[] mvMatrix = new float[16];
@@ -67,7 +65,16 @@ public final class Renderer
     public Renderer(ThreeDActivity context) {
         this.context = context;
         this.disposables = new CompositeDisposable();
-        this.map = new ConcurrentHashMap<>();
+        this.modelMap = new ConcurrentHashMap<>();
+        this.materialMap = new ConcurrentHashMap<>();
+        bitmapCache = new LruCache<String, Bitmap>(1024) {
+            @Override
+            protected void entryRemoved(boolean evicted, String key, Bitmap oldValue, Bitmap newValue) {
+                if (oldValue != newValue) {
+                    oldValue.recycle();
+                }
+            }
+        };
     }
 
     @Override
@@ -85,7 +92,7 @@ public final class Renderer
         GLES20.glTexParameteri(GLES20.GL_TEXTURE_2D, GLES20.GL_TEXTURE_MIN_FILTER, GLES20.GL_NEAREST);
         GLES20.glTexParameteri(GLES20.GL_TEXTURE_2D, GLES20.GL_TEXTURE_MAG_FILTER, GLES20.GL_LINEAR);
 
-        for (PlyModel model : map.values()) {
+        for (PlyModel model : modelMap.values()) {
             model.onSurfaceCreated(gl, config);
         }
     }
@@ -99,7 +106,7 @@ public final class Renderer
         float ratio = (float) width / height;
 
         Matrix.frustumM(projectionMatrix, 0, -ratio, ratio, -1, 1, 1f, 100f);
-        for (PlyModel model : map.values()) {
+        for (PlyModel model : modelMap.values()) {
             model.onSurfaceChanged(gl, width, height);
         }
     }
@@ -117,22 +124,60 @@ public final class Renderer
         Matrix.multiplyMM(mvMatrix, 0, viewMatrix, 0, modelMatrix, 0);
         Matrix.multiplyMM(mvpMatrix, 0, projectionMatrix, 0, mvMatrix, 0);
 
-        for (PlyModel model : map.values()) {
-            model.onDrawFrame(mvpMatrix, programHandle);
+        for (Map.Entry<String, PlyModel> entry : modelMap.entrySet()) {
+            String style = entry.getKey();
+            String material = materialMap.get(style);
+            Bitmap bitmap = bitmapCache.get(material);
+            if (bitmap != null && !bitmap.isRecycled()) {
+                GLUtils.texImage2D(GLES20.GL_TEXTURE_2D, 0, bitmap, 0);
+            }
+            entry.getValue().onDrawFrame(mvpMatrix, programHandle);
         }
     }
 
     public void removeModel(String key) {
-        map.remove(key);
+        modelMap.remove(key);
     }
 
-    public void addModel(String key) {
-        render(key);
+    public void addModel(String style, String material) {
+        renderStyle(style);
+
+        materialMap.put(style, material);
+
+        renderMaterial(material);
     }
 
-    private void render(String key) {
+    public void updateMaterial(String style, String material) {
+        String cache = materialMap.get(style);
+        if (cache == null) {
+            throw new RuntimeException("please invoke addModel(String, String) first, not find this style in map");
+        }
+        Bitmap bitmap = bitmapCache.get(material);
+        if (bitmap == null) {
+            downloadImage(material);
+        }
+    }
+
+    private void renderStyle(String key) {
         if (!isPlyFileExist(key)) {
             downloadAndDecodeDracoFile(key);
+        }
+    }
+
+    private void renderMaterial(String key) {
+        Bitmap cache = bitmapCache.get(key);
+        if (cache == null) {
+            File file = StorageUtils.imageFile(key);
+            if (file.exists()) {
+                Bitmap bitmap = BitmapFactory.decodeFile(file.getAbsolutePath());
+                if (bitmap != null) {
+                    bitmapCache.put(key, bitmap);
+                } else {
+                    downloadImage(key);
+                }
+            } else {
+                downloadImage(key);
+            }
         }
     }
 
@@ -273,7 +318,7 @@ public final class Renderer
 
                     @Override
                     public void onSuccess(PlyModel plyModel) {
-                        map.put(path, plyModel);
+                        modelMap.put(key, plyModel);
                     }
 
                     @Override
@@ -319,6 +364,77 @@ public final class Renderer
         }
         elementReader.close();
         return index;
+    }
+
+    private void downloadImage(String material) {
+        Single.create(new SingleOnSubscribe<Bitmap>() {
+            @Override
+            public void subscribe(SingleEmitter<Bitmap> emitter) throws Exception {
+                boolean result = false;
+                File image = StorageUtils.imageFile(material);
+
+                Bitmap bitmap = null;
+                InputStream is = null;
+                FileOutputStream fos = null;
+
+                try {
+                    Response<ResponseBody> execute = ApiCreator.api().download(material).execute();
+                    ResponseBody body = execute.body();
+                    if (execute.isSuccessful() && body != null) {
+                        is = body.byteStream();
+                        fos = new FileOutputStream(image);
+                        byte[] buf = new byte[1024 * 4 * 4];
+                        int len;
+                        while ((len = is.read(buf)) != -1) {
+                            fos.write(buf, 0, len);
+                            fos.flush();
+                        }
+
+                        bitmap = BitmapFactory.decodeFile(image.getAbsolutePath());
+                        result = true;
+                    }
+                } catch (Exception e) {
+                    e.printStackTrace();
+                } finally {
+                    if (is != null) {
+                        try {
+                            is.close();
+                        } catch (IOException e) {
+                            e.printStackTrace();
+                        }
+                    }
+                    if (fos != null) {
+                        try {
+                            fos.close();
+                        } catch (IOException e) {
+                            e.printStackTrace();
+                        }
+                    }
+                }
+
+                if (result) {
+                    emitter.onSuccess(bitmap);
+                } else {
+                    emitter.onError(new RuntimeException());
+                }
+            }
+        }).observeOn(AndroidSchedulers.mainThread())
+                .subscribeOn(Schedulers.io())
+                .subscribe(new SingleObserver<Bitmap>() {
+                    @Override
+                    public void onSubscribe(Disposable d) {
+                        disposables.add(d);
+                    }
+
+                    @Override
+                    public void onSuccess(Bitmap bitmap) {
+                        bitmapCache.put(material, bitmap);
+                    }
+
+                    @Override
+                    public void onError(Throwable e) {
+                    }
+                });
     }
 
     public void destroy() {

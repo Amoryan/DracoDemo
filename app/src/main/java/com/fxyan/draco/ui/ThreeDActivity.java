@@ -107,10 +107,10 @@ public final class ThreeDActivity
                         data.add(item.fushi);
                         adapter.notifyDataSetChanged();
 
-                        renderer.addModel(item.huatuo.style.get(0).key);
-                        renderer.addModel(item.jiebi.style.get(0).key);
-                        renderer.addModel(item.zhushi.style.get(0).key);
-                        renderer.addModel(item.fushi.style.get(0).key);
+                        renderer.addModel(item.huatuo.style.get(0).key, item.huatuo.material.get(0).key);
+                        renderer.addModel(item.jiebi.style.get(0).key, item.jiebi.material.get(0).key);
+                        renderer.addModel(item.zhushi.style.get(0).key, item.zhushi.material.get(0).key);
+                        renderer.addModel(item.fushi.style.get(0).key, item.fushi.material.get(0).key);
                     }
 
                     @Override
