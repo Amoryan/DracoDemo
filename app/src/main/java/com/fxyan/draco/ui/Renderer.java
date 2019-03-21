@@ -148,10 +148,7 @@ public final class Renderer
     }
 
     public void updateMaterial(String style, String material) {
-        String cache = materialMap.get(style);
-        if (cache == null) {
-            throw new RuntimeException("please invoke addModel(String, String) first, not find this style in map");
-        }
+        materialMap.put(style, material);
         Bitmap bitmap = bitmapCache.get(material);
         if (bitmap == null) {
             downloadImage(material);

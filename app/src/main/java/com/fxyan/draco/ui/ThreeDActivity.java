@@ -201,8 +201,9 @@ public final class ThreeDActivity
         public void onBindViewHolder(@NonNull RecyclerView.ViewHolder viewHolder, int i) {
             super.onBindViewHolder(viewHolder, i);
 
-            viewHolder.itemView.setTag(data.get(i).key);
-            viewHolder.itemView.setOnClickListener(new View.OnClickListener() {
+            View view = viewHolder.itemView.findViewById(R.id.name);
+            view.setTag(data.get(i).key);
+            view.setOnClickListener(new View.OnClickListener() {
                 @Override
                 public void onClick(View v) {
                     String key = (String) v.getTag();
