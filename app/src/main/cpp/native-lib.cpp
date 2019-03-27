@@ -11,13 +11,15 @@
 #include <draco/io/obj_encoder.h>
 #include <draco/io/ply_encoder.h>
 
-extern "C" JNIEXPORT jboolean JNICALL
+extern "C"
+JNIEXPORT jboolean JNICALL
 Java_com_fxyan_draco_ui_ThreeDActivity_decodeDraco(JNIEnv *jniEnv,
-                                                 jobject instance,
-                                                 jstring draco,
-                                                 jstring ply) {
+                                                   jobject instance,
+                                                   jstring draco,
+                                                   jstring outputFile,
+                                                   jboolean isPly) {
     const char *cs = jniEnv->GetStringUTFChars(draco, 0);
-    const char *cs1 = jniEnv->GetStringUTFChars(ply, 0);
+    const char *cs1 = jniEnv->GetStringUTFChars(outputFile, 0);
 
     std::ifstream input_file(cs, std::ios::binary);
 

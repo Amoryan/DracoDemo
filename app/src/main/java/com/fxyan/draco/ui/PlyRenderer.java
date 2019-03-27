@@ -44,7 +44,7 @@ public final class PlyRenderer
 
     @Override
     protected boolean decodeModel(String dracoFile, String decodeFile) {
-        return context.decodeDraco(dracoFile, decodeFile);
+        return context.decodeDraco(dracoFile, decodeFile, true);
     }
 
     @Override
@@ -88,16 +88,16 @@ public final class PlyRenderer
     private float[] readVertex(PlyReaderFile reader) throws IOException {
         float[] vertex;
         ElementReader elementReader = reader.nextElementReader();
-        vertex = new float[elementReader.getCount() * PlyModel.PER_VERTEX_SIZE];
+        vertex = new float[elementReader.getCount() * IModel.PER_VERTEX_SIZE];
         for (int i = 0; i < elementReader.getCount(); i++) {
             Element element = elementReader.readElement();
-            vertex[i * PlyModel.PER_VERTEX_SIZE] = (float) element.getDouble("x");
-            vertex[i * PlyModel.PER_VERTEX_SIZE + 1] = (float) element.getDouble("y");
-            vertex[i * PlyModel.PER_VERTEX_SIZE + 2] = (float) element.getDouble("z");
+            vertex[i * IModel.PER_VERTEX_SIZE] = (float) element.getDouble("x");
+            vertex[i * IModel.PER_VERTEX_SIZE + 1] = (float) element.getDouble("y");
+            vertex[i * IModel.PER_VERTEX_SIZE + 2] = (float) element.getDouble("z");
 
-            vertex[i * PlyModel.PER_VERTEX_SIZE + 3] = (float) element.getDouble("nx");
-            vertex[i * PlyModel.PER_VERTEX_SIZE + 4] = (float) element.getDouble("ny");
-            vertex[i * PlyModel.PER_VERTEX_SIZE + 5] = (float) element.getDouble("nz");
+            vertex[i * IModel.PER_VERTEX_SIZE + 3] = (float) element.getDouble("nx");
+            vertex[i * IModel.PER_VERTEX_SIZE + 4] = (float) element.getDouble("ny");
+            vertex[i * IModel.PER_VERTEX_SIZE + 5] = (float) element.getDouble("nz");
         }
         elementReader.close();
         return vertex;

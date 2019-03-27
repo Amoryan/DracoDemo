@@ -84,7 +84,7 @@ public final class ThreeDActivity
         recyclerView.setAdapter(adapter);
     }
 
-    public native boolean decodeDraco(String draco, String ply);
+    public native boolean decodeDraco(String input, String output, boolean isPly);
 
     private void fetchData(String name) {
         Single.create((SingleOnSubscribe<_3DDetail>) emitter -> {

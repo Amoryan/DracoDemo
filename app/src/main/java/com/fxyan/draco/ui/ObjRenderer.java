@@ -44,7 +44,7 @@ public final class ObjRenderer
 
     @Override
     protected boolean decodeModel(String dracoFile, String decodeFile) {
-        return context.decodeDraco(dracoFile, decodeFile);
+        return context.decodeDraco(dracoFile, decodeFile, false);
     }
 
     @Override
@@ -98,15 +98,15 @@ public final class ObjRenderer
         if (result) {
             float[] vertex = new float[indexList.size() * 3];
             for (int i = 0; i < indexList.size(); i += 2) {
-                int start = ObjModel.PER_VERTEX_SIZE * i / 2;
+                int start = IModel.PER_VERTEX_SIZE * i / 2;
                 int vIndex = indexList.get(i);
-                vIndex *= ObjModel.PER_VERTEX_COORD_SIZE;
+                vIndex *= IModel.PER_VERTEX_COORD_SIZE;
                 vertex[start] = vertexList.get(vIndex);
                 vertex[start + 1] = vertexList.get(vIndex + 1);
                 vertex[start + 2] = vertexList.get(vIndex + 2);
 
                 int nIndex = indexList.get(i + 1);
-                nIndex *= ObjModel.PER_VERTEX_NORMAL_SIZE;
+                nIndex *= IModel.PER_VERTEX_NORMAL_SIZE;
                 vertex[start + 3] = normalList.get(nIndex);
                 vertex[start + 4] = normalList.get(nIndex + 1);
                 vertex[start + 5] = normalList.get(nIndex + 2);
