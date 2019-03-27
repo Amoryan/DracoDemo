@@ -103,7 +103,7 @@ public final class ObjRenderer
         GLES20.glTexParameteri(GLES20.GL_TEXTURE_2D, GLES20.GL_TEXTURE_MAG_FILTER, GLES20.GL_LINEAR);
 
         for (PlyModel model : modelMap.values()) {
-            model.onSurfaceCreated(gl, config);
+            model.onSurfaceCreated();
         }
     }
 
@@ -117,7 +117,7 @@ public final class ObjRenderer
 
         Matrix.frustumM(projectionMatrix, 0, -ratio, ratio, -1, 1, 1f, 50f);
         for (PlyModel model : modelMap.values()) {
-            model.onSurfaceChanged(gl, width, height);
+            model.onSurfaceChanged(width, height);
         }
     }
 

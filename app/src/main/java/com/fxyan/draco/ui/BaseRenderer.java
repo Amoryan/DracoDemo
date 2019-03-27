@@ -10,14 +10,10 @@ import android.os.SystemClock;
 import android.util.Log;
 import android.util.LruCache;
 
-import com.fxyan.draco.entity.PlyModel;
+import com.fxyan.draco.entity.IModel;
 import com.fxyan.draco.net.ApiCreator;
 import com.fxyan.draco.utils.GLESUtils;
 import com.fxyan.draco.utils.StorageUtils;
-
-import org.smurn.jply.Element;
-import org.smurn.jply.ElementReader;
-import org.smurn.jply.PlyReaderFile;
 
 import java.io.File;
 import java.io.FileOutputStream;
@@ -44,13 +40,11 @@ import retrofit2.Response;
 /**
  * @author fxYan
  */
-public class BaseRenderer
+public abstract class BaseRenderer
         implements GLSurfaceView.Renderer {
 
-    private ThreeDActivity context;
-
-    private CompositeDisposable disposables;
-    private ConcurrentHashMap<String, PlyModel> modelMap;
+    protected CompositeDisposable disposables;
+    protected ConcurrentHashMap<String, IModel> modelMap;
     private ConcurrentHashMap<String, String> materialMap;
     private LruCache<String, Bitmap> bitmapCache;
 
@@ -63,8 +57,7 @@ public class BaseRenderer
     private int programHandle;
     private float scale = 1;
 
-    public BaseRenderer(ThreeDActivity context) {
-        this.context = context;
+    public BaseRenderer() {
         this.disposables = new CompositeDisposable();
         this.modelMap = new ConcurrentHashMap<>();
         this.materialMap = new ConcurrentHashMap<>();
@@ -101,8 +94,8 @@ public class BaseRenderer
         GLES20.glTexParameteri(GLES20.GL_TEXTURE_2D, GLES20.GL_TEXTURE_MIN_FILTER, GLES20.GL_NEAREST);
         GLES20.glTexParameteri(GLES20.GL_TEXTURE_2D, GLES20.GL_TEXTURE_MAG_FILTER, GLES20.GL_LINEAR);
 
-        for (PlyModel model : modelMap.values()) {
-            model.onSurfaceCreated(gl, config);
+        for (IModel model : modelMap.values()) {
+            model.onSurfaceCreated();
         }
     }
 
@@ -115,8 +108,8 @@ public class BaseRenderer
         float ratio = (float) width / height;
 
         Matrix.frustumM(projectionMatrix, 0, -ratio, ratio, -1, 1, 1f, 50f);
-        for (PlyModel model : modelMap.values()) {
-            model.onSurfaceChanged(gl, width, height);
+        for (IModel model : modelMap.values()) {
+            model.onSurfaceChanged(width, height);
         }
     }
 
@@ -134,7 +127,7 @@ public class BaseRenderer
         Matrix.multiplyMM(mvMatrix, 0, viewMatrix, 0, modelMatrix, 0);
         Matrix.multiplyMM(mvpMatrix, 0, projectionMatrix, 0, mvMatrix, 0);
 
-        for (Map.Entry<String, PlyModel> entry : modelMap.entrySet()) {
+        for (Map.Entry<String, IModel> entry : modelMap.entrySet()) {
             String style = entry.getKey();
             String material = materialMap.get(style);
             Bitmap bitmap = bitmapCache.get(material);
@@ -163,7 +156,7 @@ public class BaseRenderer
     }
 
     private void renderStyle(String key) {
-        if (!isPlyFileExist(key)) {
+        if (!isModelFileExist(key)) {
             downloadAndDecodeDracoFile(key);
         }
     }
@@ -185,20 +178,12 @@ public class BaseRenderer
         }
     }
 
-    private boolean isPlyFileExist(String key) {
-        File file = StorageUtils.plyFile(key);
-        if (file.exists()) {
-            Log.d("fxYan", String.format("文件%s.ply已存在，直接加载", key));
-            readPlyFile(key, file.getAbsolutePath(), true);
-            return true;
-        }
-        return false;
-    }
+    protected abstract boolean isModelFileExist(String key);
 
-    private void downloadAndDecodeDracoFile(String key) {
+    protected void downloadAndDecodeDracoFile(String key) {
         Single.create((SingleOnSubscribe<String>) emitter -> {
             boolean result = false;
-            File ply = StorageUtils.plyFile(key);
+            File decodeFile = genDecodeFile(key);
 
             Call<ResponseBody> download = ApiCreator.api().download(key);
             InputStream is = null;
@@ -226,7 +211,7 @@ public class BaseRenderer
                     start = System.currentTimeMillis();
                     Log.d("fxYan", String.format("文件%s开始解压", key));
 
-                    if (context.decodeDraco(draco.getAbsolutePath(), ply.getAbsolutePath())) {
+                    if (decodeModel(draco.getAbsolutePath(), decodeFile.getAbsolutePath())) {
                         end = System.currentTimeMillis();
                         Log.d("fxYan", String.format("文件%s解压完成，耗时%s", key, (end - start)));
 
@@ -253,7 +238,7 @@ public class BaseRenderer
             }
 
             if (result) {
-                emitter.onSuccess(ply.getAbsolutePath());
+                emitter.onSuccess(decodeFile.getAbsolutePath());
             } else {
                 emitter.onError(new RuntimeException());
             }
@@ -266,8 +251,8 @@ public class BaseRenderer
                     }
 
                     @Override
-                    public void onSuccess(String ply) {
-                        readPlyFile(key, ply, false);
+                    public void onSuccess(String file) {
+                        readModelFile(key, file, false);
                     }
 
                     @Override
@@ -276,99 +261,11 @@ public class BaseRenderer
                 });
     }
 
-    public void readPlyFile(String key, String path, boolean isExistRead) {
-        Single.create((SingleOnSubscribe<PlyModel>) emitter -> {
-            boolean result = false;
+    protected abstract File genDecodeFile(String key);
 
-            PlyReaderFile reader = null;
-            float[] vertex = null;
-            int[] index = null;
+    protected abstract boolean decodeModel(String dracoFile, String decodeFile);
 
-            try {
-                long start = System.currentTimeMillis();
-                Log.d("fxYan", String.format("文件%s开始解析", path));
-
-                reader = new PlyReaderFile(path);
-                vertex = readVertex(reader);
-                index = readFace(reader);
-                result = true;
-
-                long end = System.currentTimeMillis();
-                Log.d("fxYan", String.format("%s文件解析完成，耗时%s", path, (end - start)));
-            } catch (IOException e) {
-                e.printStackTrace();
-            } finally {
-                if (reader != null) {
-                    try {
-                        reader.close();
-                    } catch (IOException e) {
-                        e.printStackTrace();
-                    }
-                }
-            }
-
-            if (result) {
-                emitter.onSuccess(new PlyModel(vertex, index));
-            } else {
-                emitter.onError(new RuntimeException());
-            }
-        }).observeOn(AndroidSchedulers.mainThread())
-                .subscribeOn(Schedulers.io())
-                .subscribe(new SingleObserver<PlyModel>() {
-                    @Override
-                    public void onSubscribe(Disposable d) {
-                        disposables.add(d);
-                    }
-
-                    @Override
-                    public void onSuccess(PlyModel plyModel) {
-                        modelMap.put(key, plyModel);
-                    }
-
-                    @Override
-                    public void onError(Throwable e) {
-                        Log.d("fxYan", String.format("路径为 %s 的文件解析失败", path));
-
-                        if (isExistRead) {
-                            downloadAndDecodeDracoFile(key);
-                        }
-                    }
-                });
-    }
-
-    private float[] readVertex(PlyReaderFile reader) throws IOException {
-        float[] vertex;
-        ElementReader elementReader = reader.nextElementReader();
-        vertex = new float[elementReader.getCount() * PlyModel.PER_VERTEX_SIZE];
-        for (int i = 0; i < elementReader.getCount(); i++) {
-            Element element = elementReader.readElement();
-            vertex[i * PlyModel.PER_VERTEX_SIZE] = (float) element.getDouble("x");
-            vertex[i * PlyModel.PER_VERTEX_SIZE + 1] = (float) element.getDouble("y");
-            vertex[i * PlyModel.PER_VERTEX_SIZE + 2] = (float) element.getDouble("z");
-
-            vertex[i * PlyModel.PER_VERTEX_SIZE + 3] = (float) element.getDouble("nx");
-            vertex[i * PlyModel.PER_VERTEX_SIZE + 4] = (float) element.getDouble("ny");
-            vertex[i * PlyModel.PER_VERTEX_SIZE + 5] = (float) element.getDouble("nz");
-        }
-        elementReader.close();
-        return vertex;
-    }
-
-    private int[] readFace(PlyReaderFile reader) throws IOException {
-        int[] index;
-        ElementReader elementReader = reader.nextElementReader();
-        int PER_FACE_VERTEX_COUNT = 3;
-        index = new int[elementReader.getCount() * PER_FACE_VERTEX_COUNT];
-        for (int i = 0; i < elementReader.getCount(); i++) {
-            Element element = elementReader.readElement();
-            int[] vertex_indices = element.getIntList("vertex_indices");
-            index[i * PER_FACE_VERTEX_COUNT] = vertex_indices[0];
-            index[i * PER_FACE_VERTEX_COUNT + 1] = vertex_indices[1];
-            index[i * PER_FACE_VERTEX_COUNT + 2] = vertex_indices[2];
-        }
-        elementReader.close();
-        return index;
-    }
+    protected abstract void readModelFile(String key, String path, boolean isExistRead);
 
     private void downloadImage(String material) {
         Single.create(new SingleOnSubscribe<Bitmap>() {
@@ -443,7 +340,6 @@ public class BaseRenderer
 
     public void destroy() {
         disposables.clear();
-        context = null;
     }
 
 }

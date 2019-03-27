@@ -21,6 +21,10 @@ public final class StorageUtils {
         return new File(rootFile(), String.format("%s.ply", key));
     }
 
+    public static File objFile(String key) {
+        return new File(rootFile(), String.format("%s.obj", key));
+    }
+
     private static File rootFile() {
         File root = new File(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS), "JPARK");
         if (!root.exists()) {
