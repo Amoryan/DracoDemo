@@ -55,6 +55,10 @@ public final class ObjRenderer
         ArrayList<Float> vertexList = new ArrayList<>();
         ArrayList<Float> normalList = new ArrayList<>();
         ArrayList<Integer> indexList = new ArrayList<>();
+
+        long startTime = System.currentTimeMillis();
+        Log.d("fxYan", String.format("文件%s开始解析", path));
+
         try {
             bufr = new BufferedReader(new FileReader(path));
             String line;
@@ -111,6 +115,10 @@ public final class ObjRenderer
                 vertex[start + 4] = normalList.get(nIndex + 1);
                 vertex[start + 5] = normalList.get(nIndex + 2);
             }
+
+            long endTime = System.currentTimeMillis();
+            Log.d("fxYan", String.format("%s文件解析完成，耗时%s", path, (endTime - startTime)));
+
             emitter.onSuccess(new ObjModel(vertex));
         } else {
             emitter.onError(new RuntimeException());

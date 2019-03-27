@@ -112,7 +112,7 @@ public class MainActivity
             root.setTag(item.key);
             root.setOnClickListener(v -> {
                 String key = (String) v.getTag();
-                ThreeDActivity.open(context, key);
+                RenderMenuActivity.open(context, key);
             });
         }
 

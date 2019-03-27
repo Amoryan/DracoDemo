@@ -85,16 +85,31 @@ Java_com_fxyan_draco_ui_ThreeDActivity_decodeDraco(JNIEnv *jniEnv,
         std::cout << "decode success !" << std::endl;
     }
 
-    draco::PlyEncoder ply_encoder;
-    if (mesh) {
-        if (!ply_encoder.EncodeToFile(*mesh, cs1)) {
-            printf("Failed to store the decoded mesh as PLY.\n");
-            return false;
+    if (isPly) {
+        draco::PlyEncoder ply_encoder;
+        if (mesh) {
+            if (!ply_encoder.EncodeToFile(*mesh, cs1)) {
+                printf("Failed to store the decoded mesh as PLY.\n");
+                return false;
+            }
+        } else {
+            if (!ply_encoder.EncodeToFile(*pc.get(), cs1)) {
+                printf("Failed to store the decoded point cloud as PLY.\n");
+                return false;
+            }
         }
     } else {
-        if (!ply_encoder.EncodeToFile(*pc.get(), cs1)) {
-            printf("Failed to store the decoded point cloud as PLY.\n");
-            return false;
+        draco::ObjEncoder obj_encoder;
+        if (mesh) {
+            if (!obj_encoder.EncodeToFile(*mesh, cs1)) {
+                printf("Failed to store the decoded mesh as OBJ.\n");
+                return false;
+            }
+        } else {
+            if (!obj_encoder.EncodeToFile(*pc.get(), cs1)) {
+                printf("Failed to store the decoded point cloud as OBJ.\n");
+                return false;
+            }
         }
     }
 

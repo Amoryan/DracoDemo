@@ -43,11 +43,13 @@ public final class ThreeDActivity
     }
 
     private static final String KEY = "key";
+    private static final String IS_PLY = "isPly";
 
-    public static void open(Context context, String name) {
+    public static void open(Context context, String name, boolean isPly) {
         Intent intent = new Intent(context, ThreeDActivity.class);
         Bundle bundle = new Bundle();
         bundle.putString(KEY, name);
+        bundle.putBoolean(IS_PLY, isPly);
         intent.putExtras(bundle);
         context.startActivity(intent);
     }
@@ -57,7 +59,7 @@ public final class ThreeDActivity
     private List<_3DItem> data = new ArrayList<>();
     private Adapter adapter;
 
-    private PlyRenderer renderer;
+    private BaseRenderer renderer;
 
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {
@@ -67,15 +69,21 @@ public final class ThreeDActivity
         context = this;
 
         Bundle extras = getIntent().getExtras();
+        boolean isPly = true;
         if (extras != null) {
             String key = extras.getString(KEY);
+            isPly = extras.getBoolean(IS_PLY, true);
 
             fetchData(String.format("%s.json", key));
         }
 
         ThreeDSurfaceView surfaceView = findViewById(R.id.surfaceView);
         surfaceView.setEGLContextClientVersion(2);// use opengl es 2.0
-        renderer = new PlyRenderer(this);
+        if (isPly) {
+            renderer = new PlyRenderer(this);
+        } else {
+            renderer = new ObjRenderer(this);
+        }
         surfaceView.setThreeDRenderer(renderer);
 
         RecyclerView recyclerView = findViewById(R.id.recyclerView);
