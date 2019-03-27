@@ -7,7 +7,8 @@ import android.view.MotionEvent;
 import android.view.ScaleGestureDetector;
 import android.view.View;
 
-import com.fxyan.draco.ui.ThreeDRenderer;
+import com.fxyan.draco.ui.BaseRenderer;
+import com.fxyan.draco.ui.PlyRenderer;
 
 /**
  * @author fxYan
@@ -17,7 +18,7 @@ public final class ThreeDSurfaceView
         implements View.OnTouchListener {
 
     private ScaleGestureDetector detector;
-    private ThreeDRenderer renderer;
+    private BaseRenderer renderer;
 
     public ThreeDSurfaceView(Context context, AttributeSet attrs) {
         super(context, attrs);
@@ -25,7 +26,7 @@ public final class ThreeDSurfaceView
         setOnTouchListener(this);
     }
 
-    public void setThreeDRenderer(ThreeDRenderer renderer) {
+    public void setThreeDRenderer(BaseRenderer renderer) {
         this.renderer = renderer;
         super.setRenderer(renderer);
     }

@@ -57,7 +57,7 @@ public final class ThreeDActivity
     private List<_3DItem> data = new ArrayList<>();
     private Adapter adapter;
 
-    private ThreeDRenderer renderer;
+    private PlyRenderer renderer;
 
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {
@@ -75,7 +75,7 @@ public final class ThreeDActivity
 
         ThreeDSurfaceView surfaceView = findViewById(R.id.surfaceView);
         surfaceView.setEGLContextClientVersion(2);// use opengl es 2.0
-        renderer = new ThreeDRenderer(this);
+        renderer = new PlyRenderer(this);
         surfaceView.setThreeDRenderer(renderer);
 
         RecyclerView recyclerView = findViewById(R.id.recyclerView);

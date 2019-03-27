@@ -44,7 +44,7 @@ import retrofit2.Response;
 /**
  * @author fxYan
  */
-public final class ThreeDRenderer
+public class BaseRenderer
         implements GLSurfaceView.Renderer {
 
     private ThreeDActivity context;
@@ -60,11 +60,10 @@ public final class ThreeDRenderer
     private float[] viewMatrix = new float[16];
     private float[] projectionMatrix = new float[16];
 
+    private int programHandle;
     private float scale = 1;
 
-    private int programHandle;
-
-    public ThreeDRenderer(ThreeDActivity context) {
+    public BaseRenderer(ThreeDActivity context) {
         this.context = context;
         this.disposables = new CompositeDisposable();
         this.modelMap = new ConcurrentHashMap<>();
