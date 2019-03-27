@@ -2,6 +2,7 @@ package com.fxyan.draco.ui;
 
 import android.util.Log;
 
+import com.fxyan.draco.entity.IModel;
 import com.fxyan.draco.entity.PlyModel;
 import com.fxyan.draco.utils.StorageUtils;
 
@@ -12,12 +13,7 @@ import org.smurn.jply.PlyReaderFile;
 import java.io.File;
 import java.io.IOException;
 
-import io.reactivex.Single;
-import io.reactivex.SingleObserver;
-import io.reactivex.SingleOnSubscribe;
-import io.reactivex.android.schedulers.AndroidSchedulers;
-import io.reactivex.disposables.Disposable;
-import io.reactivex.schedulers.Schedulers;
+import io.reactivex.SingleEmitter;
 
 /**
  * @author fxYan
@@ -51,64 +47,42 @@ public final class PlyRenderer
         return context.decodeDraco(dracoFile, decodeFile);
     }
 
-    protected void readModelFile(String key, String path, boolean isExistRead) {
-        Single.create((SingleOnSubscribe<PlyModel>) emitter -> {
-            boolean result = false;
+    @Override
+    protected void parseFile(String path, SingleEmitter<IModel> emitter) {
+        boolean result = false;
 
-            PlyReaderFile reader = null;
-            float[] vertex = null;
-            int[] index = null;
+        PlyReaderFile reader = null;
+        float[] vertex = null;
+        int[] index = null;
 
-            try {
-                long start = System.currentTimeMillis();
-                Log.d("fxYan", String.format("文件%s开始解析", path));
+        try {
+            long start = System.currentTimeMillis();
+            Log.d("fxYan", String.format("文件%s开始解析", path));
 
-                reader = new PlyReaderFile(path);
-                vertex = readVertex(reader);
-                index = readFace(reader);
-                result = true;
+            reader = new PlyReaderFile(path);
+            vertex = readVertex(reader);
+            index = readFace(reader);
+            result = true;
 
-                long end = System.currentTimeMillis();
-                Log.d("fxYan", String.format("%s文件解析完成，耗时%s", path, (end - start)));
-            } catch (IOException e) {
-                e.printStackTrace();
-            } finally {
-                if (reader != null) {
-                    try {
-                        reader.close();
-                    } catch (IOException e) {
-                        e.printStackTrace();
-                    }
+            long end = System.currentTimeMillis();
+            Log.d("fxYan", String.format("%s文件解析完成，耗时%s", path, (end - start)));
+        } catch (IOException e) {
+            e.printStackTrace();
+        } finally {
+            if (reader != null) {
+                try {
+                    reader.close();
+                } catch (IOException e) {
+                    e.printStackTrace();
                 }
             }
+        }
 
-            if (result) {
-                emitter.onSuccess(new PlyModel(vertex, index));
-            } else {
-                emitter.onError(new RuntimeException());
-            }
-        }).observeOn(AndroidSchedulers.mainThread())
-                .subscribeOn(Schedulers.io())
-                .subscribe(new SingleObserver<PlyModel>() {
-                    @Override
-                    public void onSubscribe(Disposable d) {
-                        disposables.add(d);
-                    }
-
-                    @Override
-                    public void onSuccess(PlyModel plyModel) {
-                        modelMap.put(key, plyModel);
-                    }
-
-                    @Override
-                    public void onError(Throwable e) {
-                        Log.d("fxYan", String.format("路径为 %s 的文件解析失败", path));
-
-                        if (isExistRead) {
-                            downloadAndDecodeDracoFile(key);
-                        }
-                    }
-                });
+        if (result) {
+            emitter.onSuccess(new PlyModel(vertex, index));
+        } else {
+            emitter.onError(new RuntimeException());
+        }
     }
 
     private float[] readVertex(PlyReaderFile reader) throws IOException {

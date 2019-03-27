@@ -265,7 +265,32 @@ public abstract class BaseRenderer
 
     protected abstract boolean decodeModel(String dracoFile, String decodeFile);
 
-    protected abstract void readModelFile(String key, String path, boolean isExistRead);
+    protected void readModelFile(String key, String path, boolean isExistRead) {
+        Single.create((SingleOnSubscribe<IModel>) emitter -> parseFile(path, emitter)).observeOn(AndroidSchedulers.mainThread())
+                .subscribeOn(Schedulers.io())
+                .subscribe(new SingleObserver<IModel>() {
+                    @Override
+                    public void onSubscribe(Disposable d) {
+                        disposables.add(d);
+                    }
+
+                    @Override
+                    public void onSuccess(IModel plyModel) {
+                        modelMap.put(key, plyModel);
+                    }
+
+                    @Override
+                    public void onError(Throwable e) {
+                        Log.d("fxYan", String.format("路径为 %s 的文件解析失败", path));
+
+                        if (isExistRead) {
+                            downloadAndDecodeDracoFile(key);
+                        }
+                    }
+                });
+    }
+
+    protected abstract void parseFile(String path, SingleEmitter<IModel> emitter);
 
     private void downloadImage(String material) {
         Single.create(new SingleOnSubscribe<Bitmap>() {
