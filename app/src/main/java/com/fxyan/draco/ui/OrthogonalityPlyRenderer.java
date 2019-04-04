@@ -7,7 +7,7 @@ import android.opengl.Matrix;
 import android.util.Log;
 
 import com.fxyan.draco.entity.IModel;
-import com.fxyan.draco.entity.OrthogonalityPlyModel;
+import com.fxyan.draco.entity.PlyModel;
 import com.fxyan.draco.utils.StorageUtils;
 
 import org.smurn.jply.Element;
@@ -87,7 +87,7 @@ public final class OrthogonalityPlyRenderer
         }
 
         if (result) {
-            emitter.onSuccess(new OrthogonalityPlyModel(vertex, index));
+            emitter.onSuccess(new PlyModel(vertex, index));
         } else {
             emitter.onError(new RuntimeException());
         }

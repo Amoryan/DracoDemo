@@ -10,7 +10,7 @@ import java.nio.IntBuffer;
 /**
  * @author fxYan
  */
-public class OrthogonalityPlyModel
+public class PlyModel
         implements IModel {
 
     protected FloatBuffer vertexBuffer;
@@ -18,7 +18,7 @@ public class OrthogonalityPlyModel
     protected IntBuffer indexBuffer;
     protected int[] index;
 
-    public OrthogonalityPlyModel(float[] _vertex, int[] _index) {
+    public PlyModel(float[] _vertex, int[] _index) {
         this.vertex = _vertex;
         this.index = _index;
 
