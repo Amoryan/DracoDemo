@@ -116,7 +116,7 @@ public final class OrthogonalityPlyRenderer
         Matrix.scaleM(modelMatrix, 0, scale, scale, scale);
         long time = SystemClock.uptimeMillis() % 10000L;
         float angleInDegrees = (360.0f / 10000.0f) * ((int) time);
-        Matrix.rotateM(modelMatrix, 0, rotateX + angleInDegrees, 1f, 0f, 0f);
+        Matrix.rotateM(modelMatrix, 0, rotateX, 1f, 0f, 0f);
         Matrix.rotateM(modelMatrix, 0, rotateY + angleInDegrees, 0f, 1f, 0f);
         Matrix.multiplyMM(mvpMatrix, 0, projectionMatrix, 0, modelMatrix, 0);
 

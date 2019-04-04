@@ -126,7 +126,7 @@ public abstract class BaseRenderer
         long time = SystemClock.uptimeMillis() % 10000L;
         float angleInDegrees = (360.0f / 10000.0f) * ((int) time);
         Matrix.rotateM(modelMatrix, 0, rotateX + angleInDegrees, 1f, 0f, 0f);
-        Matrix.rotateM(modelMatrix, 0, rotateY + angleInDegrees, 0f, 1f, 0f);
+        Matrix.rotateM(modelMatrix, 0, rotateY, 0f, 1f, 0f);
         Matrix.multiplyMM(mvMatrix, 0, viewMatrix, 0, modelMatrix, 0);
         Matrix.multiplyMM(mvpMatrix, 0, projectionMatrix, 0, mvMatrix, 0);
 
