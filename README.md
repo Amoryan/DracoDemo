@@ -1,0 +1,2 @@
+# DracoDemo
+google draco解压drc文件为ply或者obj文件，然后使用opengl渲染解压后的文件，实现3d戒指的展示
