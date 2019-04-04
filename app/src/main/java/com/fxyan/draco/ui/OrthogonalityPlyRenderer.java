@@ -4,6 +4,7 @@ import android.graphics.Bitmap;
 import android.opengl.GLES20;
 import android.opengl.GLUtils;
 import android.opengl.Matrix;
+import android.os.SystemClock;
 import android.util.Log;
 
 import com.fxyan.draco.entity.IModel;
@@ -113,8 +114,10 @@ public final class OrthogonalityPlyRenderer
 
         Matrix.setIdentityM(modelMatrix, 0);
         Matrix.scaleM(modelMatrix, 0, scale, scale, scale);
-        Matrix.rotateM(modelMatrix, 0, rotateX, 1f, 0f, 0f);
-        Matrix.rotateM(modelMatrix, 0, rotateY, 0f, 1f, 0f);
+        long time = SystemClock.uptimeMillis() % 10000L;
+        float angleInDegrees = (360.0f / 10000.0f) * ((int) time);
+        Matrix.rotateM(modelMatrix, 0, rotateX + angleInDegrees, 1f, 0f, 0f);
+        Matrix.rotateM(modelMatrix, 0, rotateY + angleInDegrees, 0f, 1f, 0f);
         Matrix.multiplyMM(mvpMatrix, 0, projectionMatrix, 0, modelMatrix, 0);
 
         for (Map.Entry<String, IModel> entry : modelMap.entrySet()) {

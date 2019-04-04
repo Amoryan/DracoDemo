@@ -37,7 +37,6 @@ public final class ThreeDSurfaceView
 
     @Override
     public boolean onTouch(View v, MotionEvent event) {
-        renderer.setAutoRotate(false);
         detector.onTouchEvent(event);
         switch (event.getActionMasked()) {
             case MotionEvent.ACTION_DOWN:
@@ -63,7 +62,6 @@ public final class ThreeDSurfaceView
             case MotionEvent.ACTION_UP:
             case MotionEvent.ACTION_CANCEL:
                 isMultiPointer = false;
-                renderer.setAutoRotate(true);
                 break;
             default:
         }
