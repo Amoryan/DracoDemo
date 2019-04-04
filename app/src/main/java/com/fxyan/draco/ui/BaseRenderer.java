@@ -45,17 +45,17 @@ public abstract class BaseRenderer
 
     protected CompositeDisposable disposables;
     protected ConcurrentHashMap<String, IModel> modelMap;
-    private ConcurrentHashMap<String, String> materialMap;
-    private LruCache<String, Bitmap> bitmapCache;
+    protected ConcurrentHashMap<String, String> materialMap;
+    protected LruCache<String, Bitmap> bitmapCache;
 
-    private float[] mvpMatrix = new float[16];
-    private float[] mvMatrix = new float[16];
-    private float[] modelMatrix = new float[16];
-    private float[] viewMatrix = new float[16];
-    private float[] projectionMatrix = new float[16];
+    protected float[] mvpMatrix = new float[16];
+    protected float[] mvMatrix = new float[16];
+    protected float[] modelMatrix = new float[16];
+    protected float[] viewMatrix = new float[16];
+    protected float[] projectionMatrix = new float[16];
 
-    private int programHandle;
-    private float scale = 1;
+    protected int programHandle;
+    protected float scale = 1;
 
     public BaseRenderer() {
         this.disposables = new CompositeDisposable();

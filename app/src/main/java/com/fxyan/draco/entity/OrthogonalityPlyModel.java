@@ -10,7 +10,7 @@ import java.nio.IntBuffer;
 /**
  * @author fxYan
  */
-public class PlyModel
+public class OrthogonalityPlyModel
         implements IModel {
 
     protected FloatBuffer vertexBuffer;
@@ -18,7 +18,7 @@ public class PlyModel
     protected IntBuffer indexBuffer;
     protected int[] index;
 
-    public PlyModel(float[] _vertex, int[] _index) {
+    public OrthogonalityPlyModel(float[] _vertex, int[] _index) {
         this.vertex = _vertex;
         this.index = _index;
 
@@ -35,6 +35,7 @@ public class PlyModel
         indexBuffer.position(0);
     }
 
+    @Override
     public void onDrawFrame(float[] mvpMatrix, int programHandle) {
         int mvpMatrixHandle = GLES20.glGetUniformLocation(programHandle, "u_MVPMatrix");
         GLES20.glUniformMatrix4fv(mvpMatrixHandle, 1, false, mvpMatrix, 0);

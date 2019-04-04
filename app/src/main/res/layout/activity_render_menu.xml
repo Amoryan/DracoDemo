@@ -13,7 +13,13 @@
     <android.support.v7.widget.AppCompatButton
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:onClick="plyRender"
-        android:text="ply渲染" />
+        android:onClick="plyPerspectiveRender"
+        android:text="ply渲染(透视投影)" />
+
+    <android.support.v7.widget.AppCompatButton
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:onClick="plyOrthogonalityRender"
+        android:text="ply渲染(正交投影)" />
 
 </LinearLayout>

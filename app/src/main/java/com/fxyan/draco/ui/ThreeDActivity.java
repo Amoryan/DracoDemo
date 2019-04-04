@@ -43,13 +43,17 @@ public final class ThreeDActivity
     }
 
     private static final String KEY = "key";
-    private static final String IS_PLY = "isPly";
+    private static final String RENDER_TYPE = "type";
 
-    public static void open(Context context, String name, boolean isPly) {
+    public static final int OBJ = 0;
+    public static final int PERSPECTIVE_PLY = 1;
+    public static final int ORTHOGONALITY_PLY = 2;
+
+    public static void open(Context context, String name, int type) {
         Intent intent = new Intent(context, ThreeDActivity.class);
         Bundle bundle = new Bundle();
         bundle.putString(KEY, name);
-        bundle.putBoolean(IS_PLY, isPly);
+        bundle.putInt(RENDER_TYPE, type);
         intent.putExtras(bundle);
         context.startActivity(intent);
     }
@@ -69,20 +73,26 @@ public final class ThreeDActivity
         context = this;
 
         Bundle extras = getIntent().getExtras();
-        boolean isPly = true;
+        int type = PERSPECTIVE_PLY;
         if (extras != null) {
             String key = extras.getString(KEY);
-            isPly = extras.getBoolean(IS_PLY, true);
+            type = extras.getInt(RENDER_TYPE, PERSPECTIVE_PLY);
 
             fetchData(String.format("%s.json", key));
         }
 
         ThreeDSurfaceView surfaceView = findViewById(R.id.surfaceView);
         surfaceView.setEGLContextClientVersion(2);// use opengl es 2.0
-        if (isPly) {
-            renderer = new PlyRenderer(this);
-        } else {
-            renderer = new ObjRenderer(this);
+        switch (type) {
+            case OBJ:
+                renderer = new ObjRenderer(this);
+                break;
+            case ORTHOGONALITY_PLY:
+                renderer = new OrthogonalityPlyRenderer(this);
+                break;
+            case PERSPECTIVE_PLY:
+            default:
+                renderer = new PerspectivePlyRenderer(this);
         }
         surfaceView.setThreeDRenderer(renderer);
 

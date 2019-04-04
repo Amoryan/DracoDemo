@@ -36,10 +36,14 @@ public final class RenderMenuActivity
     }
 
     public void objRender(View view) {
-        ThreeDActivity.open(this, key, false);
+        ThreeDActivity.open(this, key, ThreeDActivity.OBJ);
     }
 
-    public void plyRender(View view) {
-        ThreeDActivity.open(this, key, true);
+    public void plyPerspectiveRender(View view) {
+        ThreeDActivity.open(this, key, ThreeDActivity.PERSPECTIVE_PLY);
+    }
+
+    public void plyOrthogonalityRender(View view) {
+        ThreeDActivity.open(this, key, ThreeDActivity.ORTHOGONALITY_PLY);
     }
 }

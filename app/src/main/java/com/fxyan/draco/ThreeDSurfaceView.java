@@ -8,7 +8,6 @@ import android.view.ScaleGestureDetector;
 import android.view.View;
 
 import com.fxyan.draco.ui.BaseRenderer;
-import com.fxyan.draco.ui.PlyRenderer;
 
 /**
  * @author fxYan
