@@ -4,7 +4,6 @@ import android.graphics.Bitmap;
 import android.opengl.GLES20;
 import android.opengl.GLUtils;
 import android.opengl.Matrix;
-import android.os.SystemClock;
 import android.util.Log;
 
 import com.fxyan.draco.entity.IModel;
@@ -114,9 +113,8 @@ public final class OrthogonalityPlyRenderer
 
         Matrix.setIdentityM(modelMatrix, 0);
         Matrix.scaleM(modelMatrix, 0, scale, scale, scale);
-        long time = SystemClock.uptimeMillis() % 10000L;
-        float angleInDegrees = (360.0f / 10000.0f) * ((int) time);
-        Matrix.rotateM(modelMatrix, 0, angleInDegrees, 0f, 1f, 0f);
+        Matrix.rotateM(modelMatrix, 0, rotateX, 1f, 0f, 0f);
+        Matrix.rotateM(modelMatrix, 0, rotateY, 0f, 1f, 0f);
         Matrix.multiplyMM(mvpMatrix, 0, projectionMatrix, 0, modelMatrix, 0);
 
         for (Map.Entry<String, IModel> entry : modelMap.entrySet()) {
@@ -136,10 +134,10 @@ public final class OrthogonalityPlyRenderer
         vertex = new float[elementReader.getCount() * IModel.PER_VERTEX_SIZE];
         for (int i = 0; i < elementReader.getCount(); i++) {
             Element element = elementReader.readElement();
-            // todo这里最好是取最大的最标点，然后将正交投影的立方体放大然后看模型，这里为了简单，直接除以了20
-            vertex[i * IModel.PER_VERTEX_SIZE] = (float) element.getDouble("x") / 20;
-            vertex[i * IModel.PER_VERTEX_SIZE + 1] = (float) element.getDouble("y") / 20;
-            vertex[i * IModel.PER_VERTEX_SIZE + 2] = (float) element.getDouble("z") / 20;
+            // todo这里最好是取最大的最标点，然后将正交投影的立方体放大然后看模型，这里为了简单，直接除以了 30
+            vertex[i * IModel.PER_VERTEX_SIZE] = (float) element.getDouble("x") / 30;
+            vertex[i * IModel.PER_VERTEX_SIZE + 1] = (float) element.getDouble("y") / 30;
+            vertex[i * IModel.PER_VERTEX_SIZE + 2] = (float) element.getDouble("z") / 30;
 
             vertex[i * IModel.PER_VERTEX_SIZE + 3] = (float) element.getDouble("nx");
             vertex[i * IModel.PER_VERTEX_SIZE + 4] = (float) element.getDouble("ny");

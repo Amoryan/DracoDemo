@@ -6,7 +6,6 @@ import android.opengl.GLES20;
 import android.opengl.GLSurfaceView;
 import android.opengl.GLUtils;
 import android.opengl.Matrix;
-import android.os.SystemClock;
 import android.util.Log;
 import android.util.LruCache;
 
@@ -56,6 +55,9 @@ public abstract class BaseRenderer
 
     protected int programHandle;
     protected float scale = 1;
+    protected boolean autoRotate = true;
+    protected float rotateX;
+    protected float rotateY;
 
     public BaseRenderer() {
         this.disposables = new CompositeDisposable();
@@ -121,9 +123,8 @@ public abstract class BaseRenderer
 
         Matrix.setIdentityM(modelMatrix, 0);
         Matrix.scaleM(modelMatrix, 0, scale, scale, scale);
-        long time = SystemClock.uptimeMillis() % 10000L;
-        float angleInDegrees = (360.0f / 10000.0f) * ((int) time);
-        Matrix.rotateM(modelMatrix, 0, angleInDegrees, 1f, 1f, 1f);
+        Matrix.rotateM(modelMatrix, 0, rotateX, 1, 0, 0);
+        Matrix.rotateM(modelMatrix, 0, rotateY, 0, 1, 0);
         Matrix.multiplyMM(mvMatrix, 0, viewMatrix, 0, modelMatrix, 0);
         Matrix.multiplyMM(mvpMatrix, 0, projectionMatrix, 0, mvMatrix, 0);
 
@@ -363,8 +364,19 @@ public abstract class BaseRenderer
                 });
     }
 
+    public void addRotateX(float degree) {
+        rotateX += degree;
+    }
+
+    public void addRotateY(float degree) {
+        rotateY += degree;
+    }
+
+    public void setAutoRotate(boolean autoRotate) {
+        this.autoRotate = autoRotate;
+    }
+
     public void destroy() {
         disposables.clear();
     }
-
 }

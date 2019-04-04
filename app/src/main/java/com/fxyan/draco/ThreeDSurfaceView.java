@@ -19,6 +19,9 @@ public final class ThreeDSurfaceView
     private ScaleGestureDetector detector;
     private BaseRenderer renderer;
 
+    private int lastPointerCount;
+    private float downX, downY;
+
     public ThreeDSurfaceView(Context context, AttributeSet attrs) {
         super(context, attrs);
         detector = new ScaleGestureDetector(context, new ScaleListener());
@@ -30,9 +33,41 @@ public final class ThreeDSurfaceView
         super.setRenderer(renderer);
     }
 
+    private boolean isMultiPointer = false;
+
     @Override
     public boolean onTouch(View v, MotionEvent event) {
-        return detector.onTouchEvent(event);
+        renderer.setAutoRotate(false);
+        detector.onTouchEvent(event);
+        switch (event.getActionMasked()) {
+            case MotionEvent.ACTION_DOWN:
+                downX = event.getX();
+                downY = event.getY();
+                break;
+            case MotionEvent.ACTION_MOVE: {
+                int pointerCount = event.getPointerCount();
+                if (pointerCount > 1) {
+                    isMultiPointer = true;
+                } else if (pointerCount == 1 && !isMultiPointer) {
+                    float moveX = event.getX();
+                    float moveY = event.getY();
+                    float degreeY = (moveX - downX) / 2;
+                    renderer.addRotateY(degreeY);
+                    float degreeX = (moveY - downY) / 2;
+                    renderer.addRotateX(degreeX);
+                    downX = moveX;
+                    downY = moveY;
+                }
+            }
+            break;
+            case MotionEvent.ACTION_UP:
+            case MotionEvent.ACTION_CANCEL:
+                isMultiPointer = false;
+                renderer.setAutoRotate(true);
+                break;
+            default:
+        }
+        return true;
     }
 
     class ScaleListener implements ScaleGestureDetector.OnScaleGestureListener {
